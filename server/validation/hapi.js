@@ -158,9 +158,26 @@ const postRideValidation = (data) => {
     return schema.validate(data);
 }
 
+const lenderValidation = (data) => {
+    const schema = Joi.object({
+        userId: Joi.string().custom((value, helper) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Invalid user id");
+            }
+            return true;
+        }).required().messages({
+            "string.base": "Please provide an existing user before submitting",
+            "string.empty": "Please provide an existing user before submitting",
+            "any.required": "Please provide an existing user before submitting"
+        })
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
     userUpdateValidation,
-    postRideValidation
+    postRideValidation,
+    lenderValidation
 }
