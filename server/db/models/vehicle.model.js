@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
-const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES} = require('../../global');
+const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES} = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
     title: {
         type: String,
         minLength: 1,
-        maxLength: 100  ,
+        maxLength: 100,
         required: true 
     },
     description: {
@@ -51,6 +51,63 @@ const vehicleSchema = mongoose.Schema({
         },  
         minLength: 1,
         maxLength: 8,
+    },
+    smartCarKey: {
+        type: String,
+        required: true
+    },
+    pickUpLocations: [{
+        address: {
+            type: String,
+            required: true
+        },
+        latitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        },
+        longitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        } 
+    }],
+    returnLocations: [{
+        address: {
+            type: String,
+            required: true
+        },
+        latitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        },
+        longitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        } 
+    }],
+    unlockTypes: {
+        type: String,
+        enum: Object.values(UNLOCK_TYPES),
+        required: true
+    },
+    price: {
+        currencyTypes:{
+            type: String,
+            enum: Object.values(CURRENCY_TYPES),
+            required: true
+        },
+        amount: {
+            type: Number,
+            minLength: 0,
+            required: true
+        }
     }
 })
 const Vehicle = mongoose.model(DATABASE_MODELS.VEHICLE, vehicleSchema);

@@ -28,11 +28,12 @@ const rideSchema = mongoose.Schema({
             min: -90,
             max: 90,
         },
-        lng: {
+        lon: {
             type: Number,
             min: -180,
             max: 180,
-        }
+        },
+        required: true
     },
     returnLocation: {
         address: {
@@ -45,11 +46,12 @@ const rideSchema = mongoose.Schema({
             min: -90,
             max: 90,
         },
-        lng: {
+        lon: {
             type: Number,
             min: -180,
             max: 180,
-        }
+        },
+        required: true
     },
     plannedPickUpDt: { //Pickup date that is posted on the listing
         type: Number,
