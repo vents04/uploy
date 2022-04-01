@@ -1,6 +1,7 @@
 const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
+const { LENDER_STATUSES, RIDE_STATUSES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({
@@ -131,7 +132,7 @@ const postRideValidation = (data) => {
                 return helper.message("Invalid vehicle id")
             return true;
         }),
-        pickUpLocation: Joi.object({
+        pickupLocation: Joi.object({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,
                 "string.empty": `Address should not be empty`,
@@ -150,7 +151,7 @@ const postRideValidation = (data) => {
                 "number.max": `Number should not be more than 180`,
             })
         }).required().messages({
-            "any.required": `pickUpLocation is a required field`
+            "any.required": `pickupLocation is a required field`
         }),
         returnLocation: Joi.string().max(100).required().messages({
             address: Joi.string().max(1000).messages({
@@ -173,7 +174,7 @@ const postRideValidation = (data) => {
         }).required().messages({
             "any.required": `returnLocation is a required field`
         }),
-        plannedPickUpDt: Joi.number().required().messages({
+        plannedPickupDt: Joi.number().required().messages({
             "number.base": `Password should have at least 1 character`,
             "number.empty": `Password should not be empty`,
             "any.required": `Password is a required field`
@@ -184,6 +185,17 @@ const postRideValidation = (data) => {
             "any.required": `Password is a required field`
         })
 
+    })
+    return schema.validate(data);
+}
+
+const updateRideStatusValidation = (data) => {
+    const schema = Joi.object({
+        status: Joi.string().valid(...Object.values(RIDE_STATUSES)).messages({
+            "string.base": `Status should have at least 1 characters`,
+            "string.empty": `Status should not be empty`,
+            "any.required": `Status is a required field`
+        })
     })
     return schema.validate(data);
 }
@@ -204,10 +216,49 @@ const lenderValidation = (data) => {
     return schema.validate(data);
 }
 
+<<<<<<< HEAD
+const postVehicleValidation = (data) => {
+    const schema = Joi.object({
+        title: Joi.string().min(1).max(100).required().messages({
+            "string.base": `Title should have at least 1 character`,
+            "string.empty": `Title should not be empty`,
+            "string.min": `Title should have at least 1 character`,
+            "string.max": `Title should have at most 200 characters`,
+            "any.required": `Title is a required field`
+        }),
+        description: Joi.string().min(1).max(500).required().messages({
+            "string.base": `Description should have at least 1 character`,
+            "string.empty": `Description should not be empty`,
+            "string.min": `Description should have at least 1 character`,
+            "string.max": `Description should have at most 200 characters`,
+            "any.required": `Description is a required field`
+        }),
+        model: Joi.string().min(1).max(70).required().messages({
+            "string.base": `Model should have at least 1 character`,
+            "string.empty": `Model should not be empty`,
+            "string.min": `Model should have at least 1 character`,
+            "string.max": `Model should have at most 200 characters`,
+            "any.required": `Model is a required field`
+        }),
+        maker: {
+            
+        }
+
+=======
+const updateLenderValidation = (data) => {
+    const schema = Joi.object({
+        status: Joi.string().valid(...LENDER_STATUSES).required()
+>>>>>>> a0ac46ceb527e24868936f91a48f9afc6e7b661d
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
     userUpdateValidation,
     postRideValidation,
-    lenderValidation
+    lenderValidation,
+    updateLenderValidation,
+    updateRideStatusValidation
 }
