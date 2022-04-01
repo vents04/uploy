@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@smartcar/auth": "^2.8.0",
-    "smartcar": "^9.1.1"
-  }
-}
