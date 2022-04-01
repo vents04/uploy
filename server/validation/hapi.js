@@ -204,6 +204,37 @@ const lenderValidation = (data) => {
     return schema.validate(data);
 }
 
+const postVehicleValidation = (data) => {
+    const schema = Joi.object({
+        title: Joi.string().min(1).max(100).required().messages({
+            "string.base": `Title should have at least 1 character`,
+            "string.empty": `Title should not be empty`,
+            "string.min": `Title should have at least 1 character`,
+            "string.max": `Title should have at most 200 characters`,
+            "any.required": `Title is a required field`
+        }),
+        description: Joi.string().min(1).max(500).required().messages({
+            "string.base": `Description should have at least 1 character`,
+            "string.empty": `Description should not be empty`,
+            "string.min": `Description should have at least 1 character`,
+            "string.max": `Description should have at most 200 characters`,
+            "any.required": `Description is a required field`
+        }),
+        model: Joi.string().min(1).max(70).required().messages({
+            "string.base": `Model should have at least 1 character`,
+            "string.empty": `Model should not be empty`,
+            "string.min": `Model should have at least 1 character`,
+            "string.max": `Model should have at most 200 characters`,
+            "any.required": `Model is a required field`
+        }),
+        maker: {
+            
+        }
+
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
