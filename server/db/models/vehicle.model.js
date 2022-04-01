@@ -56,18 +56,18 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    pickUpLocations: [{
+    pickupLocations: [{
         address: {
             type: String,
             required: true
         },
-        latitude: {
+        lat: {
             type: Number,
             min: -180,
             max: 180,
             required: true
         },
-        longitude: {
+        lon: {
             type: Number,
             min: -180,
             max: 180,
@@ -79,33 +79,33 @@ const vehicleSchema = mongoose.Schema({
             type: String,
             required: true
         },
-        latitude: {
+        lat: {
             type: Number,
             min: -180,
             max: 180,
             required: true
         },
-        longitude: {
+        lon: {
             type: Number,
             min: -180,
             max: 180,
             required: true
         } 
     }],
-    unlockTypes: {
+    unlockTypes: [{
         type: String,
         enum: Object.values(UNLOCK_TYPES),
         required: true
-    },
+    }],
     price: {
-        currencyTypes:{
+        currency:{
             type: String,
             enum: Object.values(CURRENCY_TYPES),
             required: true
         },
         amount: {
             type: Number,
-            minLength: 0,
+            min: 1,
             required: true
         }
     }
