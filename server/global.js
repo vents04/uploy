@@ -1,9 +1,15 @@
 const DATABASE_MODELS = {
-    USER: "User"
+    USER: "User",
+    VEHICLE: "Vehicle",
+    RIDE: "Ride",
+    LENDER: "Lender"
 }
 
 const COLLECTIONS = {
-    USERS: "users"
+    USERS: "users",
+    VEHICLES: "vehicles",
+    RIDES: "rides",
+    LENDERS: "lenders"
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";
