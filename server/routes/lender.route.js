@@ -1,42 +1,49 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
-const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
-const User = require('../db/models/generic/user.model');
-const Lender = require('../db/models/generic/lender.model');
 const router = express.Router();
+const mongoose = require('mongoose');
 
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
+const Lender = require('../db/models/generic/lender.model');
 const { authenticate } = require('../middlewares/authenticate');
-
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
-const AuthenticationService = require('../services/authentication.service');
+const { lenderPostValidation, updateLenderValidation } = require('../validation/hapi');
 
-router.post("/", async (req, res, next) => {
-    const { error } = lenderValidation(req.body);
+router.post("/", authenticate, async (req, res, next) => {
+    const { error } = lenderPostValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const existinglENDER = await DbService.getById(COLLECTIONS.LENDERS, req.user._id);
-        if (existinglENDER) return next(new ResponseError("Lender with this id already exists", HTTP_STATUS_CODES.BAD_REQUEST));
+        const existingLender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+        if (existingLender) return next(new ResponseError("Lender for this user has already been created", HTTP_STATUS_CODES.CONFLICT));
 
         const lender = new Lender(req.body);
         await DbService.create(COLLECTIONS.LENDERS, lender);
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
 
-router.put("/", async (req, res, next) => {
+router.put("/", authenticate, async (req, res, next) => {
     const { error } = updateLenderValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const lender = await DbService.getById(COLLECTIONS.LENDERS, req.user._id);
-        if (!lender) return next(new ResponseError("Lender with this id does not exists", HTTP_STATUS_CODES.BAD_REQUEST));
+        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+        if (!lender) return next(new ResponseError("Lender does not exists", HTTP_STATUS_CODES.NOT_FOUND));
+        if (lender.status == LENDER_STATUSES.BLOCKED || lender.status == LENDER_STATUSES.PENDING_APPROVAL)
+            return next(new ResponseError("Cannot perform lender status update when lender status is pending approval or blocked", HTTP_STATUS_CODES.CONFLICT));
+        if (req.body.status == LENDER_STATUSES.BLOCKED || req.body.status == LENDER_STATUSES.PENDING_APPROVAL)
+            return next(new ResponseError("Cannot perform lender status update with new status pending approval or blocked", HTTP_STATUS_CODES.BAD_REQUEST));
 
-        await DbService.update(COLLECTIONS.LENDERS, { _id: mongoose.Types.ObjectId(req.user._id) }, {status: req.body.status});
+        await DbService.update(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) }, req.body);
+    
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
+
+module.exports = router;
