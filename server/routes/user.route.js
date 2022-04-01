@@ -39,7 +39,7 @@ router.post("/login", async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const user = await DbService.getOne(COLLECTIONS.USERS, { email: req.body.email });
+        const user = await DbService.getOne(COLLECTIONS.USERS, { email: mongoose.Types.ObjectId(req.body.email) });
         if (!user) return next(new ResponseError("User with this email has not been found", HTTP_STATUS_CODES.NOT_FOUND));
 
         const isPasswordValid = AuthenticationService.verifyPassword(req.body.password, user.password);
@@ -60,18 +60,21 @@ router.put('/', async (req, res, next) => {
     const { error } = userUpdateValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
+    const availableUser = await DbService.getOne(COLLECTIONS.USERS, {
+        "$or": [
+            { email: req.body.email },
+            { phone: req.body.phone }
+        ]
+    });
+
+    if (availableUser && availableUser._id.toString() != req.user._id) {
+        return next(new ResponseError("User with this email or phone number already exists", HTTP_STATUS_CODES.BAD_REQUEST));
+    }
+
     try {
-        const user = await DbService.getOne(COLLECTIONS.USERS, { _id: req.user._id });
-        if (!user) return next(new ResponseError("User has not been found", HTTP_STATUS_CODES.NOT_FOUND));
-
-     
-
-        setTimeout(() => {
-            const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });
-            res.status(HTTP_STATUS_CODES.OK).send({
-                token: token,
-            });
-        }, 1000);
+        await DbService.update(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.user._id) }, req.body);
+        
+        res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }

@@ -43,14 +43,14 @@ const USER_STATUSES = {
 
 const LENDER_STATUSES = {
     ACTIVE: "ACTIVE",
-    PENDING_APROVAL: "PENDING_APROVAL",
+    PENDING_APPROVAL: "PENDING_APPROVAL",
     INACTIVE: "INACTIVE",
     BLOCKED: "BLOCKED",
 }
 
 const DEFAULT_ERROR_MESSAGE = "Internal server error";
 
-const VEHICLE_MAKERS = [
+const CAR_MAKERS = [
     "Abarth",
     "Alfa Romeo",
     "Aston Martin",
@@ -115,6 +115,9 @@ const VEHICLE_MAKERS = [
     "Toyota",
     "Volkswagen",
     "Volvo",
+]
+
+const SCOOTER_MAKERS = [
     "Segway",
     "Xiaomi",
 ]
@@ -157,7 +160,8 @@ module.exports = {
     SMARTCAR_SECRET: SMARTCAR_SECRET,
     USER_STATUSES: USER_STATUSES,
     VEHICLE_STATUSES: VEHICLE_STATUSES,
-    VEHICLE_TYPES: VEHICLE_TYPES,
+    CAR_MAKERS: CAR_MAKERS,
+    SCOOTER_MAKERS: SCOOTER_MAKERS,
     LENDER_STATUSES: LENDER_STATUSES,
     RIDE_STATUSES: RIDE_STATUSES
 }
