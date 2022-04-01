@@ -1,9 +1,9 @@
 const DATABASE_MODELS = {
-
+    USER: "User"
 }
 
 const COLLECTIONS = {
-
+    USERS: "users"
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";
@@ -30,6 +30,11 @@ const HTTP_STATUS_CODES = {
     INTERNAL_SERVER_ERROR: 500,
 }
 
+const USER_STATUSES = {
+    ACTIVE: "ACTIVE",
+    BLOCKED: "BLOCKED",
+}
+
 const DEFAULT_ERROR_MESSAGE = "Internal server error";
 
 module.exports = {
@@ -43,4 +48,5 @@ module.exports = {
     HTTP_STATUS_CODES: HTTP_STATUS_CODES,
     JWT_SECRET: JWT_SECRET,
     DEFAULT_ERROR_MESSAGE: DEFAULT_ERROR_MESSAGE,
+    USER_STATUSES: USER_STATUSES
 }
