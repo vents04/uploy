@@ -36,7 +36,6 @@ const userSchema = mongoose.Schema({
     },
     profilePicture: {
         type: String,
-        optional: true,
         default: null
     },
     verifiedEmail: {
@@ -44,7 +43,7 @@ const userSchema = mongoose.Schema({
         default: false
     },
     lastPasswordReset: {
-        type: Date,
+        type: Number,
         default: Date.now
     },
     status: {

@@ -33,7 +33,7 @@ const signupValidation = (data) => {
             "string.max": `Password should have at most 100 characters`,
             "any.required": `Password is a required field`
         }),
-        phone: Joi.string().required().messages({
+        phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `User's phone should have at least 8 characters`,
             "string.empty": `User's phone should not be empty`,
             "any.required": `User's phone is a required field`
@@ -120,8 +120,64 @@ const userUpdateValidation = data => {
     return schema.validate(data);
 }
 
+const postRideValidation = (data) => {
+    const schema = Joi.object({
+        vehicleId: Joi.string().email().max(320).required().messages({
+            "string.base": `Email should have at least 1 characters`,
+            "string.empty": `Email should not be empty`,
+            "string.email": `Email should be a valid email address`,
+            "string.max": `Email should have at most 320 characters`,
+            "any.required": `Email is a required field`
+        }),
+        pickUpLocation: Joi.string().max(100).required().messages({
+            "string.base": `Password should have at least 1 character`,
+            "string.empty": `Password should not be empty`,
+            "string.max": `Password should have at most 100 characters`,
+            "any.required": `Password is a required field`
+        }),
+        returnLocation: Joi.string().max(100).required().messages({
+            "string.base": `Password should have at least 1 character`,
+            "string.empty": `Password should not be empty`,
+            "string.max": `Password should have at most 100 characters`,
+            "any.required": `Password is a required field`
+        }),
+        pickUpLocation: Joi.string().max(100).required().messages({
+            "string.base": `Password should have at least 1 character`,
+            "string.empty": `Password should not be empty`,
+            "string.max": `Password should have at most 100 characters`,
+            "any.required": `Password is a required field`
+        }),
+        pickUpLocation: Joi.string().max(100).required().messages({
+            "string.base": `Password should have at least 1 character`,
+            "string.empty": `Password should not be empty`,
+            "string.max": `Password should have at most 100 characters`,
+            "any.required": `Password is a required field`
+        })
+
+    })
+    return schema.validate(data);
+}
+
+const lenderValidation = (data) => {
+    const schema = Joi.object({
+        userId: Joi.string().custom((value, helper) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Invalid user id");
+            }
+            return true;
+        }).required().messages({
+            "string.base": "Please provide an existing user before submitting",
+            "string.empty": "Please provide an existing user before submitting",
+            "any.required": "Please provide an existing user before submitting"
+        })
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
-    userUpdateValidation
+    userUpdateValidation,
+    postRideValidation,
+    lenderValidation
 }
