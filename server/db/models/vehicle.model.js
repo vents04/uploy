@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { VEHICLE_MAKERS } = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
     title: {
@@ -21,6 +22,11 @@ const vehicleSchema = mongoose.Schema({
     },
     maker: {
         type: String,
-        enum: Object.values()
+        enum: Object.values(VEHICLE_MAKERS),
+        required: true
+    },
+    status: {
+        type: String,
+        
     }
 })
