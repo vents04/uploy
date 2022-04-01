@@ -122,35 +122,65 @@ const userUpdateValidation = data => {
 
 const postRideValidation = (data) => {
     const schema = Joi.object({
-        vehicleId: Joi.string().email().max(320).required().messages({
-            "string.base": `Email should have at least 1 characters`,
-            "string.empty": `Email should not be empty`,
-            "string.email": `Email should be a valid email address`,
-            "string.max": `Email should have at most 320 characters`,
-            "any.required": `Email is a required field`
+        vehicleId: Joi.string().required().messages({
+            "string.base": `Vehicle id should have at least 1 characters`,
+            "string.empty": `Vehicle id should not be empty`,
+            "any.required": `Vehicle id is a required field`
+        }).custom((vehicleId, helper) => {
+            if(!mongoose.Types.ObjectId.isValid(vehicleId))
+                return helper.message("Invalid vehicle id")
+            return true;
         }),
-        pickUpLocation: Joi.string().max(100).required().messages({
-            "string.base": `Password should have at least 1 character`,
-            "string.empty": `Password should not be empty`,
-            "string.max": `Password should have at most 100 characters`,
-            "any.required": `Password is a required field`
+        pickUpLocation: Joi.object({
+            address: Joi.string().max(1000).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Number should have at least 1 character`,
+                "number.empty": `Number should not be empty`,
+                "number.min": `Number should not be less than -90`,
+                "number.max": `Number should not be more than 90`,
+            }),
+            lon: Joi.number().min(-180).max(180).messages({
+                "number.base": `Address should have at least 1 character`,
+                "number.empty": `Address should not be empty`,
+                "number.min": `Number should not be less than -180`,
+                "number.max": `Number should not be more than 180`,
+            })
+        }).required().messages({
+            "any.required": `pickUpLocation is a required field`
         }),
         returnLocation: Joi.string().max(100).required().messages({
-            "string.base": `Password should have at least 1 character`,
-            "string.empty": `Password should not be empty`,
-            "string.max": `Password should have at most 100 characters`,
+            address: Joi.string().max(1000).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Number should have at least 1 character`,
+                "number.empty": `Number should not be empty`,
+                "number.min": `Number should not be less than -90`,
+                "number.max": `Number should not be more than 90`,
+            }),
+            lon: Joi.number().min(-180).max(180).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "number.min": `Number should not be less than -180`,
+                "number.max": `Number should not be more than 180`,
+            })
+        }).required().messages({
+            "any.required": `returnLocation is a required field`
+        }),
+        plannedPickUpDt: Joi.number().required().messages({
+            "number.base": `Password should have at least 1 character`,
+            "number.empty": `Password should not be empty`,
             "any.required": `Password is a required field`
         }),
-        pickUpLocation: Joi.string().max(100).required().messages({
-            "string.base": `Password should have at least 1 character`,
-            "string.empty": `Password should not be empty`,
-            "string.max": `Password should have at most 100 characters`,
-            "any.required": `Password is a required field`
-        }),
-        pickUpLocation: Joi.string().max(100).required().messages({
-            "string.base": `Password should have at least 1 character`,
-            "string.empty": `Password should not be empty`,
-            "string.max": `Password should have at most 100 characters`,
+        plannedReturnDt: Joi.string().required().messages({
+            "number.base": `Password should have at least 1 character`,
+            "number.empty": `Password should not be empty`,
             "any.required": `Password is a required field`
         })
 
