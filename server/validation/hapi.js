@@ -260,5 +260,6 @@ module.exports = {
     postRideValidation,
     lenderPostValidation,
     updateLenderValidation,
-    updateRideStatusValidation
+    updateRideStatusValidation,
+    postVehicleValidation
 }
