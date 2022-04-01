@@ -36,7 +36,7 @@ const userSchema = mongoose.Schema({
     profilePicture: {
         type: String,
         optional: true,
-        default: undefined
+        default: null
     },
     verifiedEmail: {
         type: Boolean,
