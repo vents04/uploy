@@ -216,7 +216,6 @@ const lenderValidation = (data) => {
     return schema.validate(data);
 }
 
-<<<<<<< HEAD
 const postVehicleValidation = (data) => {
     const schema = Joi.object({
         title: Joi.string().min(1).max(100).required().messages({
@@ -243,12 +242,13 @@ const postVehicleValidation = (data) => {
         maker: {
             
         }
+    });
+    return schema.validate(data);
+};
 
-=======
 const updateLenderValidation = (data) => {
     const schema = Joi.object({
         status: Joi.string().valid(...LENDER_STATUSES).required()
->>>>>>> a0ac46ceb527e24868936f91a48f9afc6e7b661d
     })
     return schema.validate(data);
 }
@@ -260,5 +260,6 @@ module.exports = {
     postRideValidation,
     lenderValidation,
     updateLenderValidation,
-    updateRideStatusValidation
+    updateRideStatusValidation,
+    postVehicleValidation
 }
