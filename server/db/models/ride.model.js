@@ -17,7 +17,7 @@ const rideSchema = mongoose.Schema({
         enum: Object.values(RIDE_STATUSES),
         default: RIDE_STATUSES.PENDING_APROVAL
     },
-    pickUpLocation: {
+    pickupLocation: {
         address: {
             type: String,
             minLength: 1,
@@ -53,7 +53,7 @@ const rideSchema = mongoose.Schema({
         },
         required: true
     },
-    plannedPickUpDt: { //Pickup date that is posted on the listing
+    plannedPickupDt: { //Pickup date that is posted on the listing
         type: Number,
         required: true
     },
@@ -61,7 +61,7 @@ const rideSchema = mongoose.Schema({
         type: Number,
         required: true
     },
-    acPickUpDt: { //Date for the exact moment when a person gets to a vehicle
+    acPickupDt: { //Date for the exact moment when a person gets to a vehicle
         type: Number,
         default: null
     },
