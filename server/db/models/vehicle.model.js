@@ -1,11 +1,11 @@
 const mongoose = require('mongoose');
-const { VEHICLE_MAKERS, VEHICLE_STATUSES } = require('../../global');
+const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES} = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
     title: {
         type: String,
         minLength: 1,
-        maxLength: 100  ,
+        maxLength: 100,
         required: true 
     },
     description: {
@@ -22,7 +22,16 @@ const vehicleSchema = mongoose.Schema({
     },
     maker: {
         type: String,
-        enum: [CAR_MAKERS],
+        enum: function(){
+            switch(this.type) {
+                case VEHICLE_TYPES.CAR:
+                    return CAR_MAKERS;
+                case VEHICLE_TYPES.SCOOTER:
+                    return SCOOTER_MAKERS;
+                case VEHICLE_TYPES.BIKE:
+                    return BIKE_MAKERS;
+            }
+        },
         required: true
     },
     status: {
@@ -30,6 +39,76 @@ const vehicleSchema = mongoose.Schema({
         enum: Object.values(VEHICLE_STATUSES),
         default: VEHICLE_STATUSES.ACTIVE
     },
-
-
+    type: {
+        type: String,
+        enum: Object.values(VEHICLE_TYPES),
+        required: true
+    },
+    seats: {
+        type: Number,
+        required: function(){
+            return this.type && VEHICLE_TYPES.CAR
+        },  
+        minLength: 1,
+        maxLength: 8,
+    },
+    smartCarKey: {
+        type: String,
+        required: true
+    },
+    pickUpLocations: [{
+        address: {
+            type: String,
+            required: true
+        },
+        latitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        },
+        longitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        } 
+    }],
+    returnLocations: [{
+        address: {
+            type: String,
+            required: true
+        },
+        latitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        },
+        longitude: {
+            type: Number,
+            min: -180,
+            max: 180,
+            required: true
+        } 
+    }],
+    unlockTypes: {
+        type: String,
+        enum: Object.values(UNLOCK_TYPES),
+        required: true
+    },
+    price: {
+        currencyTypes:{
+            type: String,
+            enum: Object.values(CURRENCY_TYPES),
+            required: true
+        },
+        amount: {
+            type: Number,
+            minLength: 0,
+            required: true
+        }
+    }
 })
+const Vehicle = mongoose.model(DATABASE_MODELS.VEHICLE, vehicleSchema);
+module.exports = Vehicle;
