@@ -1,6 +1,7 @@
 const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
+const { LENDER_STATUSES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({
@@ -204,10 +205,18 @@ const lenderValidation = (data) => {
     return schema.validate(data);
 }
 
+const updateLenderValidation = (data) => {
+    const schema = Joi.object({
+        status: Joi.string().valid(LENDER_STATUSES).required()
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
     userUpdateValidation,
     postRideValidation,
-    lenderValidation
+    lenderValidation,
+    updateLenderValidation
 }
