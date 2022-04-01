@@ -55,3 +55,24 @@ router.post("/login", async (req, res, next) => {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
+
+router.put('/', async (req, res, next) => {
+    const { error } = userUpdateValidation(req.body);
+    if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const user = await DbService.getOne(COLLECTIONS.USERS, { _id: req.user._id });
+        if (!user) return next(new ResponseError("User has not been found", HTTP_STATUS_CODES.NOT_FOUND));
+
+     
+
+        setTimeout(() => {
+            const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });
+            res.status(HTTP_STATUS_CODES.OK).send({
+                token: token,
+            });
+        }, 1000);
+    } catch (err) {
+        return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
