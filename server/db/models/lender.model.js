@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
-const { DATABASE_MODELS, USER_STATUSES } = require('../../../global');
-const { COLLECTIONS } = require('../../global');
+const { COLLECTIONS, LENDER_STATUSES, DATABASE_MODELS } = require('../../global');
 
 const lenderSchema = mongoose.Schema({
     userId: {
@@ -15,9 +14,9 @@ const lenderSchema = mongoose.Schema({
     status: {
         type: String,
         enum: Object.values(LENDER_STATUSES),
-        default: USER_STATUSES.PENDING_APROVAL,
+        default: LENDER_STATUSES.PENDING_APPROVAL,
     },
 });
 
-const User = mongoose.model(DATABASE_MODELS.USER, userSchema);
-module.exports = User;
+const Lender = mongoose.model(DATABASE_MODELS.LENDER, lenderSchema);
+module.exports = Lender;
