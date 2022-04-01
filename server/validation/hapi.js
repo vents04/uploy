@@ -33,7 +33,7 @@ const signupValidation = (data) => {
             "string.max": `Password should have at most 100 characters`,
             "any.required": `Password is a required field`
         }),
-        phone: Joi.string().required().messages({
+        phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `User's phone should have at least 8 characters`,
             "string.empty": `User's phone should not be empty`,
             "any.required": `User's phone is a required field`
