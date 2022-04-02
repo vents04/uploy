@@ -163,3 +163,66 @@ p {
   width: 100%;
   background-color: #ffbfc1;
 }
+
+.notation {
+  font-family: "Main Regular", sans-serif;
+  font-size: 1rem;
+  color: #ccc;
+}
+
+/* width */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: #aaa; 
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #e7e7e7; 
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+input[type="time"]::-webkit-inner-spin-button,
+input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+a {
+  text-decoration: none;
+}
+
+.profile-picture-container {
+  width: 40px;
+  height: 40px;
+  background-color: #e7e7e7;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.profile-picture-initials {
+  font-family: "Main Bold", sans-serif;
+  font-size: 12.5px;
+  color: "#777";
+}

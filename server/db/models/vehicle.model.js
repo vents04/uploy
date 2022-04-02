@@ -3,16 +3,9 @@ const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPE
 
 const vehicleSchema = mongoose.Schema({
     lenderId: {
-        userId: {
-            type: mongoose.Types.ObjectId,
-            ref: COLLECTIONS.USERS,
-            required: function() {return this.business.length == 0}
-        },
-        businessId: {
-            type: mongoose.Types.ObjectId,
-            ref: COLLECTIONS.BUSINESSES,
-            required: function() {return this.userId.length == 0}
-        }
+        type: mongoose.Types.ObjectId,
+        ref: COLLECTIONS.USERS,
+        required: true
     },
     title: {
         type: String,
@@ -24,12 +17,6 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         minLength: 1,
         maxLength: 500,
-        required: true
-    },
-    model: {
-        type: String,
-        minLength: 1,
-        maxLength: 70, // the actual characters length of the longest car name + a bit more chars - Land Rover Range Rover Evoque 2.0 TD4 E-Capability 4x4 HSE Dynam
         required: true
     },
     maker: {
@@ -68,7 +55,7 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    pickupLocations: {
+    pickupLocations: [{
         address: {
             type: String,
             required: true
@@ -85,7 +72,7 @@ const vehicleSchema = mongoose.Schema({
             max: 180,
             required: true
         } 
-    },
+    }],
     returnLocations: [{
         address: {
             type: String,
@@ -121,8 +108,8 @@ const vehicleSchema = mongoose.Schema({
             required: true
         }
     },
-    pictures: [{
-        file:{
+    photos: [{
+        photo:{
             type: String,
             required: true
         }

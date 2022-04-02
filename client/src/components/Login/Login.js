@@ -32,10 +32,12 @@ export default class Login extends Component {
                 email: this.state.email,
                 password: this.state.password
             }, false).then((response) => {
-                Auth.setToken(response.body.token);
+                Auth.setToken(response.data.token);
                 this.props.showLogin(false);
                 this.props.showSignup(false);
+                this.props.checkAuthentication();
             }).catch((error) => {
+                console.log(error);
                 if (error.response) {
                     this.setState({ error: error.response.data.error, showError: true });
                 } else if (error.request) {

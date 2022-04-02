@@ -53,11 +53,11 @@ export default class Navbar extends Component {
       <div className="navbar-container">
         {
           this.state.showLogin
-          && <Login showLogin={this.toggleShowLogin} showSignup={this.toggleShowSignup}/>
+          && <Login showLogin={this.toggleShowLogin} showSignup={this.toggleShowSignup} checkAuthentication={this.checkAuthentication}/>
         }
         {
           this.state.showSignup
-          && <Signup showSignup={this.toggleShowSignup} showLogin={this.toggleShowLogin}/>
+          && <Signup showSignup={this.toggleShowSignup} showLogin={this.toggleShowLogin} checkAuthentication={this.checkAuthentication}/>
         }
         <div className="navbar-logo-container">
             <div className="navbar-logo" />

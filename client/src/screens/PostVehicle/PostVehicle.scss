@@ -8,10 +8,78 @@
     align-items: center;
     justify-content: flex-start;
     border-bottom: 1px solid #e7e7e7;
+    height: 100px;
 }
 
 .top-bar-text {
     font-family: "Main Bold", sans-serif;
     font-size: 20px;
     margin-left: 1rem;
+}
+
+.post-vehicle-container {
+    width: 100%;
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #fafafa;
+}
+
+.post-vehicle-form {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    overflow-y: auto;
+    padding-bottom: 5rem;
+    align-items: center;
+}
+
+.post-vehicle-item {
+    width: 100%;
+    padding: 1rem 2rem;
+}
+
+.post-vehicle-item:first-of-type {
+    padding-top: 2rem;
+}
+
+.post-vehicle-item-text {
+    font-family: "Main Bold", sans-serif;
+    font-size: 1rem;
+    color: #262626;
+}
+
+.post-vehicle-item-input {
+    background-color: white;
+    border: 1px solid #e7e7e7;
+    border-radius: 4px;
+    padding: 0.5rem 0.75rem;
+    width: 100%;
+    margin-top: 0.5rem;
+    resize: vertical;
+}
+
+.post-vehicle-item-textarea {
+    min-height: 100px;
+}
+
+.location {
+    border: 1px solid #e7e7e7;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0.5rem 0rem;
+}
+
+.location-text {
+    font-family: "Main Regular", sans-serif;
+    font-size: 16px;
 }

@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
 const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
 const User = require('../db/models/user.model');
 const router = express.Router();
@@ -10,6 +10,7 @@ const { authenticate } = require('../middlewares/authenticate');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 const AuthenticationService = require('../services/authentication.service');
+const Lender = require('../db/models/lender.model');
 
 router.post("/signup", async (req, res, next) => {
     const { error } = signupValidation(req.body);
@@ -22,6 +23,12 @@ router.post("/signup", async (req, res, next) => {
         const user = new User(req.body);
         user.password = AuthenticationService.hashPassword(req.body.password);
         await DbService.create(COLLECTIONS.USERS, user);
+
+        const lender = new Lender({
+            userId: user._id,
+            status: LENDER_STATUSES.ACTIVE
+        })
+        await DbService.create(COLLECTIONS.LENDERS, lender);
 
         setTimeout(() => {
             const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });
