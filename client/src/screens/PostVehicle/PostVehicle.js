@@ -1,12 +1,13 @@
 import React, { Component } from 'react'
 
-import { IoMdClose } from 'react-icons/io'
+import { IoMdArrowBack, IoMdClose } from 'react-icons/io'
 import { CURRENCY_TYPES, UNLOCK_TYPES, VEHICLE_TYPES } from '../../global';
 
 import './PostVehicle.scss';
 
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import ApiRequests from '../../classes/ApiRequests';
+import { Link } from 'react-router-dom';
 
 export default class PostVehicle extends Component {
 
@@ -122,7 +123,9 @@ export default class PostVehicle extends Component {
     return (
       <>
         <div className="top-bar">
-            <IoMdClose size={24} className="icon" />
+            <Link to={"/"}>
+              <IoMdArrowBack size={24} className="icon" />
+            </Link>
             <p className="top-bar-text">Add a vehicle</p>
         </div>
         <div className="post-vehicle-container">
