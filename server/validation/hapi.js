@@ -119,7 +119,11 @@ const userUpdateValidation = data => {
             }
             return true;
         }),
-        profilePicture: Joi.string().optional().allow(null)
+        profilePicture: Joi.string().optional().allow(null),
+        customerId: Joi.string().optional().messages({
+            "string.base": `Customer id should have at least 1 character`,
+            "string.empty": `Customer id should not be empty`,
+        })
         
     })
     return schema.validate(data);
@@ -319,6 +323,9 @@ const postVehicleValidation = (data) => {
             currency: Joi.string().valid(...CURRENCY_TYPES).required(),
             amount: Joi.number().min(1).required(),
         }).required(),
+        pictures: Joi.array().items(Joi.object({
+            file: Joi.string().required()
+        })).required()
     })
     return schema.validate(data);
 }
@@ -411,6 +418,9 @@ const updateVehicleValidation = (data) => {
             currency: Joi.string().valid(...CURRENCY_TYPES).optional(),
             amount: Joi.number().min(1).optional(),
         }).optional(),
+        pictures: Joi.array().items(Joi.object({
+            file: Joi.string().required()
+        })).optional()
     })
     return schema.validate(data);
 }

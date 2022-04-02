@@ -55,6 +55,10 @@ const userSchema = mongoose.Schema({
         type: Number,
         default: Date.now
     },
+    customerId: {
+        type: String,
+        default: null
+    },
 });
 
 const User = mongoose.model(DATABASE_MODELS.USER, userSchema);
