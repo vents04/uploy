@@ -23,6 +23,8 @@ router.post("/", async (req, res, next) => {
         const vehicle = new Vehicle(req.body);
         await DbService.create(COLLECTIONS.VEHICLES, vehicle);
 
+        res.status(HTTP_STATUS_CODES.OK);
+
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
