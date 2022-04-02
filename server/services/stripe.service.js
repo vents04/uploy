@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 const db = mongoose.connection;
-const { COLLECTIONS, HTTP_STATUS_CODES } = require('../global');
+const { COLLECTIONS, HTTP_STATUS_CODES, CURRENCY_TYPES } = require('../global');
 
 const { STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global.js');
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
-const vehicle = await stripe.products.create({name: 'Vehicle'});
+const ResponseError = require('../errors/responseError');
 
 const StripeService = {
-    getPrice: function (collection, filter) {
+    getPrice: function (collection, stripeTokenId) {
         return new Promise(async (resolve, reject) => {
             validateCollection(collection, reject);
             db.collection(collection).findOne(filter).then(resolve).catch((error) => {
@@ -18,5 +18,5 @@ const StripeService = {
     }
 }
 
-module.exports = StripeService;
+module.exports = StripeService();
 

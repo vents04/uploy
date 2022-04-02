@@ -542,7 +542,6 @@ const reviewValidation = (data) => {
             "number.empty": `Rating should not be empty`,
             "number.min": `Rating should not be less than 1`,
             "number.max": `Rating should not be more than 5000`,
-
         }),
     })
     return schema.validate(data);
