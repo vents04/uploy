@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
 const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
-const User = require('../db/models/generic/user.model');
+const User = require('../db/models/user.model');
 const router = express.Router();
 
 const { authenticate } = require('../middlewares/authenticate');
