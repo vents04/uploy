@@ -11,13 +11,13 @@ const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 const AuthenticationService = require('../services/authentication.service');
 
-router.post("/", async (req, res, next) => {
+router.post("/", authenticate, async (req, res, next) => {
     const { error } = postVehicleValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     const lender = await DbService.getById(COLLECTIONS.LENDERS, req.body.lenderId);
     if(!lender && lender.status != LENDER_STATUSES.ACTIVE){
-        return next(new ResponseError("Lender wasn't found or his status wasn't active", HTTP_STATUS_CODES.BAD_REQUEST));
+        return next(new ResponseError("Lender wasn't found or his status wasn't active", HTTP_STATUS_CODES.NOT_FOUND));
     }
     try {
         const vehicle = new Vehicle(req.body);
@@ -29,5 +29,23 @@ router.post("/", async (req, res, next) => {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
+
+router.put("/", authenticate, async (req, res, next) => {
+    const { error } = updateVehicleValidation(req.body);
+    if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const vehicle = DbService.getOne(COLLECTIONS.VEHICLES, {lenderId: mongoose.Types.ObjectId(req.user._id)});
+        if(!vehicle){
+            return next(new ResponseError("The vehicle you try to update was not found", HTTP_STATUS_CODES.NOT_FOUND));
+        }
+        await DbService.update(COLLECTIONS.VEHICLES, { lenderId: mongoose.Types.ObjectId(req.user._id) }, req.body);
+        
+        res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch (err) {
+        return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+
+})
 
 module.exports = router;
