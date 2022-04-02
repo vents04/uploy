@@ -119,7 +119,11 @@ const userUpdateValidation = data => {
             }
             return true;
         }),
-        profilePicture: Joi.string().optional().allow(null)
+        profilePicture: Joi.string().optional().allow(null),
+        customerId: Joi.string().optional().messages({
+            "string.base": `Customer id should have at least 1 character`,
+            "string.empty": `Customer id should not be empty`,
+        })
         
     })
     return schema.validate(data);
