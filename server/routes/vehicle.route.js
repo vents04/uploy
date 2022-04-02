@@ -87,7 +87,7 @@ router.post("/vehicle/search", async (req, res, next) => {
             for(let ride of rides){
                 if(!(req.body.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
                 && !(req.body.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
-                && distance > 20){
+                && distance > 20 && req.user._id.toString() == vehicle.lenderId.toString()){
                     continue;
                 }
             }
