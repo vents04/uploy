@@ -4,13 +4,20 @@ import './Login.scss';
 
 import { IoMdClose } from 'react-icons/io';
 
+import ApiRequests from '../../classes/ApiRequests';
+import Auth from '../../classes/Auth';
+
+import { Sentry } from "react-activity";
+import "react-activity/dist/library.css";
+
 export default class Login extends Component {
 
     state = {
         email: "",
         password: "",
         error: "",
-        showError: false
+        showError: false,
+        showLoading: false
     }
 
     login = () => {
@@ -20,7 +27,25 @@ export default class Login extends Component {
                 showError: true
             })
         } else {
-            // request
+            this.setState({showLoading: true, showError: false, error: ""});
+            ApiRequests.post("user/login", {}, {
+                email: this.state.email,
+                password: this.state.password
+            }, false).then((response) => {
+                Auth.setToken(response.body.token);
+                this.props.showLogin(false);
+                this.props.showSignup(false);
+            }).catch((error) => {
+                if (error.response) {
+                    this.setState({ error: error.response.data.error, showError: true });
+                } else if (error.request) {
+                    this.setState({ showError: true, error: "Response not returned" });
+                } else {
+                    this.setState({ showError: true, error: "Request setting error" });
+                }
+            }).finally(() => {
+                this.setState({showLoading: false})
+            })
         }
     }
 
@@ -52,7 +77,13 @@ export default class Login extends Component {
                             this.state.showError
                             && <p className="error-box">{this.state.error}</p>
                         }
-                        <button className="action-button" onClick={this.login}>Continue</button>
+                        <button className="action-button" onClick={this.login}>
+                            {
+                                this.state.showLoading
+                                ? <Sentry size={14} />
+                                : "Continue"
+                            }
+                        </button>
                         <p className="modal-redirect-text" onClick={() => {
                             this.props.showLogin(false)
                             this.props.showSignup(true);

@@ -90,10 +90,10 @@ router.post('/validate-token', async (req, res, next) => {
         const verified = AuthenticationService.verifyToken(token);
         if (!verified) valid = false;
         else {
-            user = await DbService.getById({ _id: mongoose.Types.ObjectId(verified._id) });
+            user = await DbService.getById(COLLECTIONS.USERS, verified._id);
             if (!user) valid = false;
             else {
-                if (verified.iat <= user.lastPasswordReset.getTime() / 1000) valid = false;
+                if (verified.iat <= new Date(user.lastPasswordReset).getTime() / 1000) valid = false;
             }
         }
 
@@ -103,7 +103,6 @@ router.post('/validate-token', async (req, res, next) => {
         })
     }
     catch (error) {
-        console.log(error);
         return next(new ResponseError(error.message, error.status || HTTP_STATUS_CODES.UNAUTHORIZED), req, res, next);
     }
 });

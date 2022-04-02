@@ -3,7 +3,7 @@ const router = express.Router();
 const mongoose = require('mongoose');
 
 const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
-const Lender = require('../db/models/generic/lender.model');
+const Lender = require('../db/models/lender.model');
 const { authenticate } = require('../middlewares/authenticate');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');

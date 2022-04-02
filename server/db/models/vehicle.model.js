@@ -1,16 +1,16 @@
 const mongoose = require('mongoose');
-const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, SCOOTER_MAKERS, BIKE_MAKERS} = require('../../global');
+const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, SCOOTER_MAKERS, BIKE_MAKERS, COLLECTIONS, DATABASE_MODELS} = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
     lenderId: {
         userId: {
             type: mongoose.Types.ObjectId,
             ref: COLLECTIONS.USERS,
-            required: function() {return this.bussiness.length == 0}
+            required: function() {return this.business.length == 0}
         },
-        bussinessId: {
+        businessId: {
             type: mongoose.Types.ObjectId,
-            ref: COLLECTIONS.BUSSINESSES,
+            ref: COLLECTIONS.BUSINESSES,
             required: function() {return this.userId.length == 0}
         }
     },
