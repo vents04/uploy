@@ -1,0 +1,48 @@
+@import '../../../assets/styles/global.styles.css';
+
+.page-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ride-container {
+    height: calc(100% - 100px);
+    width: 100%
+}
+
+.action-button-container {
+    height: 100px;
+    width: 100%;
+    display: flex;
+    border-top: 1px solid #e7e7e7;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding: 0rem 2rem;
+
+    .action-button {
+        padding: 1rem;
+    }
+}
+
+.vehicle-title {
+    font-family: "Main Black", sans-serif;
+    font-size: 24px;
+    padding: 2rem;
+}
+
+.carousel-image {
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: cover;
+    width: 100%;
+    height: 200px;
+}
+
+.carousel-container {
+    padding: 0rem 2rem;
+    border-radius: 4px;
+}
