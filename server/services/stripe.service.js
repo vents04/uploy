@@ -101,5 +101,5 @@ const StripeService = {
     }
 }
 
-module.exports = StripeService;
+module.exports = StripeService();
 
