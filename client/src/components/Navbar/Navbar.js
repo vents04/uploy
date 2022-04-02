@@ -13,7 +13,7 @@ export default class Navbar extends Component {
       lastName: "User",
       profilePicture: null
     },
-    showLogin: true,
+    showLogin: false,
     showSignup: false
   }
 
