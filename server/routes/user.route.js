@@ -86,11 +86,11 @@ router.post('/validate-token', async (req, res, next) => {
     }
     try {
         let valid = true;
-
+        let user = null;
         const verified = AuthenticationService.verifyToken(token);
         if (!verified) valid = false;
         else {
-            const user = await DbService.getById({ _id: mongoose.Types.ObjectId(verified._id) });
+            user = await DbService.getById({ _id: mongoose.Types.ObjectId(verified._id) });
             if (!user) valid = false;
             else {
                 if (verified.iat <= user.lastPasswordReset.getTime() / 1000) valid = false;
