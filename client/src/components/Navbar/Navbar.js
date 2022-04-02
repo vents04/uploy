@@ -1,4 +1,5 @@
 import React, { Component } from 'react'
+import { Link } from 'react-router-dom';
 import ApiRequests from '../../classes/ApiRequests';
 import Auth from '../../classes/Auth';
 import Login from '../Login/Login';
@@ -65,19 +66,19 @@ export default class Navbar extends Component {
         <div className="navbar-menu">
           {
             this.state.isAuthenticated
-            ? <>
+            ? <Link to="/profile">
                 {
                   this.state.user.profilePicture
                   ? <div className="profile-picture-container" style={{
                     backgroundImage: `url(${this.state.user.profilePicture})`,
                     boxShadow: "3px 3px 3px #e7e7e7",
                     border: "1px solid #e7e7e7",
-                  }}/>
+                  }} />
                   : <div className="profile-picture-container">
                     <p className="profile-picture-initials">{this.state.user.firstName.charAt(0)}{this.state.user.lastName.charAt(0)}</p>
                   </div>
                 }
-            </>
+            </Link>
             : <>
               <button className="action-button" onClick={() => {
                 this.setState({showLogin: true})
