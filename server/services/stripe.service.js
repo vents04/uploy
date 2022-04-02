@@ -19,3 +19,4 @@ const StripeService = {
 }
 
 module.exports = StripeService;
+
