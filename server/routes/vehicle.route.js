@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS } = require('../global');
 const { postVehicleValidation, updateVehicleValidation } = require('../validation/hapi');
 const Vehicle = require('../db/models/vehicle.model');
 const router = express.Router();
@@ -53,10 +53,9 @@ router.post("/vehicle/search", async (req, res, next) => {
         return next(new ResponseError("Both latitude and longitude must be provided", HTTP_STATUS_CODES.BAD_REQUEST));
     }
     try {
-        let vehiclesForCheck, sorted = [];
+        let vehiclesForCheck= [];
         const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {})
         for (let vehicle of vehicles) {
-            Object.assign(vehicle, { criteriasMet: 0 });
             let lat1 = vehicle.location.lat;
             let lat2 = req.body.lat;
             let lng1 = vehicle.location.lon;
@@ -79,84 +78,48 @@ router.post("/vehicle/search", async (req, res, next) => {
             let radius = 6371;
 
             let distance = c * radius;
-            Object.assign(vehicle, { distance: distance });
-            if (distance > 20) {
-                continue;
+
+            const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
+                {status: {"$ne": RIDE_STATUSES.CANCELLED}},
+                {status: {"$ne": RIDE_STATUSES.FINISHED}},
+            ]});
+
+            for(let ride of rides){
+                if(!(ride.plannedPickupDt - THIRTY_MINUTES_IN_MILLISECONDS > req.body.rdt) 
+                || !(ride.plannedReturnDt + THIRTY_MINUTES_IN_MILLISECONDS < req.body.pdt)
+                && distance > 20){
+                    continue;
+                }
             }
-            vehiclesForCheck[i].criteriasMet++;
+
+            Object.assign(vehicle, { distance: distance });
             vehiclesForCheck.push(vehicle);
         }
 
-        const reviews = await DbService.getMany(COLLECTIONS.REVIEWS, {});
         for (let i = 0; i < vehiclesForCheck.length; i++) {
-            let sumOfAllRatings = 0, counter = 1;
-            for (let review of reviews) {
-                const vehicle = await DbService.getOne(COLLECTIONS.VEHICLES, {_id: mongoose.Types.ObjectId(review.vehicleId)});
-                if (vehicle._id.toString() == vehiclesForCheck[i]._id.toString()) {
-                    sumOfAllRatings += review.rating;
-                    counter++;
-                }
-            }
-            let overallRating = Number.parseFloat(sumOfAllRatings / counter).toFixed(1);
-            if (overallRating < minRating) {
-                continue;
-            }
-            vehiclesForCheck[i].criteriasMet++;
-
-            Object.assign(vehiclesForCheck[i], { rating: overallRating });
-        }
-
-        for (let i = 0; i < vehiclesForCheck.length; i++) {
-            if (vehiclesForCheck[i].distance <= 5
-                && vehiclesForCheck[i].rating >= 3.5) {
-                vehiclesForCheck[i].criteriasMet += 4
-                sorted.push(vehiclesForCheck[i]);
-                continue;
-            }
-            if (vehiclesForCheck[i].distance <= 5
-                && vehiclesForCheck[i].rating < 3.5) {
-                vehiclesForCheck[i].criteriasMet += 3
-                sorted.push(vehiclesForCheck[i]);
-                continue;
-            }
-            if (vehiclesForCheck[i].distance > 5
-                && vehiclesForCheck[i].rating >= 3.5) {
-                vehiclesForCheck[i].criteriasMet += 2;
-                sorted.push(vehiclesForCheck[i]);
-                continue;
-            }
-            if (vehiclesForCheck[i].distance > 5
-                && vehiclesForCheck[i].rating < 3.5) {
-                vehiclesForCheck[i].criteriasMet += 1;
-                sorted.push(vehiclesForCheck[i]);
-                continue;
-            }
-        }
-
-        for (let i = 0; i < sorted.length; i++) {
-            for (let j = 0; j < (sorted.length - i - 1); j++) {
-                if (sorted[j].criteriasMet < sorted[j + 1].criteriasMet) {
-                    var temp = sorted[j]
-                    sorted[j] = sorted[j + 1]
-                    sorted[j + 1] = temp
+            for (let j = 0; j < (vehiclesForCheck.length - i - 1); j++) {
+                if (vehiclesForCheck[j].distance < vehiclesForCheck[j + 1].distance) {
+                    var temp = vehiclesForCheck[j]
+                    vehiclesForCheck[j] = vehiclesForCheck[j + 1]
+                    vehiclesForCheck[j + 1] = temp
                 }
             }
         }
 
-        for (let index = 0; index < sorted.length; index++) {
-            let user = await DbService.getById(COLLECTIONS.USERS, sorted[index].userId.toString());
+        for (let index = 0; index < vehiclesForCheck.length; index++) {
+            let user = await DbService.getById(COLLECTIONS.USERS, vehiclesForCheck[index].userId.toString());
             // remove below line when in production
-            if (!user) user = await DbService.getOne(COLLECTIONS.USERS, { _id: sorted[index].userId.toString() });
+            if (!user) user = await DbService.getOne(COLLECTIONS.USERS, { _id: vehiclesForCheck[index].userId.toString() });
             if (!user) {
-                sorted.splice(index, 1);
+                vehiclesForCheck.splice(index, 1);
                 index--;
                 continue;
             }
-            sorted[index].user = user;
+            vehiclesForCheck[index].user = user;
         }
 
         return res.status(HTTP_STATUS_CODES.OK).send({
-            results: sorted
+            results: vehiclesForCheck
         })
         
 
