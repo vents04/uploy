@@ -1,4 +1,6 @@
 import React, { Component } from 'react'
+import ApiRequests from '../../classes/ApiRequests';
+import Auth from '../../classes/Auth';
 import Login from '../Login/Login';
 import Signup from '../Signup/Signup';
 
@@ -8,13 +10,13 @@ export default class Navbar extends Component {
 
   state = {
     isAuthenticated: false,
-    user: {
-      firstName: "Testing",
-      lastName: "User",
-      profilePicture: null
-    },
+    user: {},
     showLogin: false,
     showSignup: false
+  }
+
+  componentDidMount() {
+    this.checkAuthentication();
   }
 
   closeAllModals = () => {
@@ -27,6 +29,22 @@ export default class Navbar extends Component {
 
   toggleShowSignup = (state) => {
     this.setState({showSignup: state});
+  }
+
+  checkAuthentication = () => {
+    const token = Auth.getToken();
+    if(!token) return;
+    ApiRequests.post("user/validate-token", {}, {}, true).then((response) => {
+      this.setState({isAuthenticated: response.data.valid, user: response.data.user});
+    }).catch((error) => {
+      if (error.response) {
+        alert(error.response.data.error);
+      } else if (error.request) {
+        alert("Response not returned");
+      } else {
+        alert("Request setting error");
+      }
+    })
   }
 
   render() {
@@ -51,8 +69,10 @@ export default class Navbar extends Component {
                 {
                   this.state.user.profilePicture
                   ? <div className="profile-picture-container" style={{
-                    backgroundImage: `url(${this.state.user.profilePicture})`
-                  }}/>
+                    backgroundImage: `url(${this.state.user.profilePicture})`,
+                    boxShadow: "3px 3px 3px #e7e7e7",
+                    border: "1px solid #e7e7e7",
+                  }} onClick={this.}/>
                   : <div className="profile-picture-container">
                     <p className="profile-picture-initials">{this.state.user.firstName.charAt(0)}{this.state.user.lastName.charAt(0)}</p>
                   </div>

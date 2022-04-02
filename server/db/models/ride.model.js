@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES } = require('../../global');
+const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES, CURRENCY_TYPES } = require('../../global');
 
 const rideSchema = mongoose.Schema({
     vehicleId: {
@@ -17,8 +17,7 @@ const rideSchema = mongoose.Schema({
             type: Number,
             min: 1,
             required: true
-        },
-        ref: COLLECTIONS.VEHICLES
+        }
     },
     userId: {
         type: mongoose.Types.ObjectId,
@@ -28,7 +27,7 @@ const rideSchema = mongoose.Schema({
     status: {
         type: String,
         enum: Object.values(RIDE_STATUSES),
-        default: RIDE_STATUSES.PENDING_APROVAL
+        default: RIDE_STATUSES.PENDING_APPROVAL
     },
     pickupLocation: {
         address: {
@@ -45,8 +44,7 @@ const rideSchema = mongoose.Schema({
             type: Number,
             min: -180,
             max: 180,
-        },
-        required: true
+        }
     },
     returnLocation: {
         address: {
@@ -63,8 +61,7 @@ const rideSchema = mongoose.Schema({
             type: Number,
             min: -180,
             max: 180,
-        },
-        required: true
+        }
     },
     plannedPickupDt: { //Pickup date that is posted on the listing
         type: Number,

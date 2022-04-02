@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { DATABASE_MODELS, USER_STATUSES } = require('../../../global');
+const { DATABASE_MODELS, USER_STATUSES } = require('../../global');
 
 const userSchema = mongoose.Schema({
     email: {
