@@ -469,6 +469,48 @@ const postBusinessValidation = (data) => {
     return schema.validate(data);
 }
 
+const businessUpdateValidation = (data) => {
+    const schema = Joi.object({
+        name: Joi.string().max(200).optional().messages({
+            "string.base": `Name identifier should have at least 1 characters`,
+            "string.empty": `Name identifier should not be empty`,
+            "string.max": `Name identifier should have at most 200 characters`,
+        }),
+        users: Joi.array().items({
+            _id: Joi.string().custom((value, helper) => {
+                if (!mongoose.Types.ObjectId.isValid(value)) {
+                    return helper.message("User id must be a valid ObjectId");
+                }                 
+                return true;
+            }).optional()
+        }),
+        phone: Joi.string().min(8).max(15).optional().messages({
+            "string.base": `Phone number should have at least 8 characters`,
+            "string.empty": `Phone number should not be empty`,
+        }).custom((phone, helper) => {
+            if (phone) {
+                const regionCode = PhoneNumber(phone).getRegionCode();
+                if (!regionCode) {
+                    return helper.message("The User phone number appears to be invalid");
+                }
+                const phoneNumber = PhoneNumber(phone, regionCode);
+                if (!phoneNumber || !phoneNumber.isValid()) {
+                    return helper.message("The User phone number appears to be invalid");
+                }
+            }
+            return true;
+        }),
+        email: Joi.string().email().min(3).max(320).optional().messages({
+            "string.base": `Email should have at least 3 characters`,
+            "string.empty": `Email should not be empty`,
+            "string.min": `Email should have at least 3 characters`,
+            "string.email": `Email should be a valid email address`,
+            "string.max": `Email should have at most 320 characters`,
+        })
+    })
+    return schema.validate(data);
+}
+
 const reviewValidation = (data) => {
     const schema = Joi.object({
         rideId: Joi.string().custom((value, helper) => {
@@ -513,5 +555,6 @@ module.exports = {
     postVehicleValidation,
     updateVehicleValidation,
     postBusinessValidation,
+    businessUpdateValidation,
     reviewValidation
 }

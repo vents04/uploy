@@ -6,7 +6,8 @@ const businessSchema = mongoose.Schema({
         type: String,
         minLength: 1,
         maxLength: 200,
-        required: true
+        required: true,
+        unique: true
     },
     name: {
         type: String,
