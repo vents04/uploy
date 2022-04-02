@@ -18,7 +18,7 @@ router.post('/', authenticate, async(req, res, next) => {
 
         const ride = new Ride(req.body);
         if(ride.plannedPickupDt > ride.plannedReturnDt) return next(new ResponseError("Pickup date cannot be after return date ", HTTP_STATUS_CODES.CONFLICT));
-        const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
+        const rides = await DbService.getMany(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
             {status: {"$ne": RIDE_STATUSES.CANCELLED}},
             {status: {"$ne": RIDE_STATUSES.FINISHED}},
         ]});
