@@ -3,11 +3,11 @@ const Business = require("../db/models/buisness.model");
 const { COLLECTIONS, HTTP_STATUS_CODES } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
 const DbService = require("../services/db.service");
-const { postRideValidation } = require("../validation/hapi");
+const { postBusinessValidation, businessUpdateValidation } = require("../validation/hapi");
 const router = express.Router();
 
 router.post('/', authenticate, async(req, res, next) => {
-    const { error } = postRideValidation(req.body);
+    const { error } = postBusinessValidation(req.body);
     if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
@@ -24,7 +24,7 @@ router.post('/', authenticate, async(req, res, next) => {
 });
 
 router.post('/update', authenticate, async(req, res, next) => {
-    const { error } = postRideValidation(req.body);
+    const { error } = businessUpdateValidation(req.body);
     if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
