@@ -3,6 +3,8 @@ const DATABASE_MODELS = {
     VEHICLE: "Vehicle",
     RIDE: "Ride",
     LENDER: "Lender",
+    PAYMENT: "Payment",
+    REVIEW: "Reviews",
     BUSINESS: "Business"
 }
 
@@ -10,7 +12,9 @@ const COLLECTIONS = {
     USERS: "users",
     VEHICLES: "vehicles",
     RIDES: "rides",
-    LENDERS: "lenders"
+    LENDER: "lenders",
+    PAYMENT: "payments",
+    REVIEW: "reviews"
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";
@@ -1157,6 +1161,11 @@ const CURRENCY_TYPES = {
     USD: "USD"
 }
 
+const PAYMENT_STATUSES = {
+    PAYED: "PAYED",
+    UNPAYED: "UNPAYED",
+}
+
 const ONE_DAY_IN_MILLISECONDS = 86400;
 
 const THIRTY_MINUTES_IN_MILLISECONDS = 1800000;
@@ -1187,5 +1196,6 @@ module.exports = {
     CURRENCY_TYPES: CURRENCY_TYPES,
     ONE_DAY_IN_MILLISECONDS: ONE_DAY_IN_MILLISECONDS,
     THIRTY_MINUTES_IN_MILLISECONDS: THIRTY_MINUTES_IN_MILLISECONDS,
-    BUSINESS_STATUSES
+    PAYMENT_STATUSES: PAYMENT_STATUSES,
+    BUSINESS_STATUSES: BUSINESS_STATUSES
 }
