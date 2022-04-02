@@ -12,9 +12,9 @@ const COLLECTIONS = {
     USERS: "users",
     VEHICLES: "vehicles",
     RIDES: "rides",
-    LENDER: "lenders",
-    PAYMENT: "payments",
-    REVIEW: "reviews"
+    LENDERS: "lenders",
+    PAYMENTS: "payments",
+    REVIEWS: "reviews"
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";
