@@ -25,7 +25,7 @@ router.post('/', authenticate, async(req, res, next) => {
 
         for(let current of rides){
             if(!(ride.plannedPickupDt - THIRTY_MINUTES_IN_MILLISECONDS > current.plannedReturnDt) 
-            & !(ride.plannedReturnDt + THIRTY_MINUTES_IN_MILLISECONDS < current.plannedPickupDt)){
+            && !(ride.plannedReturnDt + THIRTY_MINUTES_IN_MILLISECONDS < current.plannedPickupDt)){
                 return next(new ResponseError("Dates cannot overlap", HTTP_STATUS_CODES.CONFLICT));
             }
         }
