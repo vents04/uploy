@@ -72,7 +72,7 @@ export default class Navbar extends Component {
                     backgroundImage: `url(${this.state.user.profilePicture})`,
                     boxShadow: "3px 3px 3px #e7e7e7",
                     border: "1px solid #e7e7e7",
-                  }} onClick={this.}/>
+                  }}/>
                   : <div className="profile-picture-container">
                     <p className="profile-picture-initials">{this.state.user.firstName.charAt(0)}{this.state.user.lastName.charAt(0)}</p>
                   </div>
