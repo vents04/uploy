@@ -33,7 +33,7 @@ export default class Profile extends Component {
             <p className="top-bar-text">Profile</p>
       </div>
       {
-        this.state.user
+        this.state.isAuthenticated
         ?<div className="profile-container">
         {
           this.state.user.profilePicture
@@ -46,6 +46,12 @@ export default class Profile extends Component {
             <p className="profile-picture-initials">{this.state.user.firstName.chaArt(0)}{this.state.user.lastName.charAt(0)}</p>
           </div>
         }
+        <p className="profile-name-container">{this.state.user.firstName} {this.state.user.firstName}</p>
+        <p className="modal-input-hint">Email:</p>
+          <input type="text" placeholder="Type here" className="modal-input"
+          onInput={(evt) => {
+              this.setState({email: evt.target.value, showError: false, error: ""})
+          }} defaultValue={this.state.user.email}/>
         </div>
         : null
       }
