@@ -92,7 +92,8 @@ router.post("/vehicle/search", async (req, res, next) => {
                 }
             }
 
-            Object.assign(vehicle, { distance: distance });
+            const vehicleOwner = await DbService.getOne(COLLECTIONS.LENDERS, {lenderId: vehicle.lenderId})
+            Object.assign(vehicle, { distance: distance }, {user: vehicleOwner});
             vehiclesForCheck.push(vehicle);
         }
 
