@@ -250,13 +250,6 @@ const postVehicleValidation = (data) => {
             "string.max": `Description should have at most 500 characters`,
             "any.required": `Description is a required field`
         }),
-        model: Joi.string().min(1).max(70).required().messages({
-            "string.base": `Model should have at least 1 character`,
-            "string.empty": `Model should not be empty`,
-            "string.min": `Model should have at least 1 character`,
-            "string.max": `Model should have at most 200 characters`,
-            "any.required": `Model is a required field`
-        }),
         type: Joi.string().valid(...VEHICLE_TYPES).required().
         when(Joi.object({type: Joi.string().valid("CAR")}).unknown(), {
             then: Joi.object({
@@ -345,13 +338,6 @@ const updateVehicleValidation = (data) => {
             "string.min": `Description should have at least 1 character`,
             "string.max": `Description should have at most 500 characters`,
             "any.required": `Description is a required field`
-        }),
-        model: Joi.string().min(1).max(70).optional().messages({
-            "string.base": `Model should have at least 1 character`,
-            "string.empty": `Model should not be empty`,
-            "string.min": `Model should have at least 1 character`,
-            "string.max": `Model should have at most 200 characters`,
-            "any.required": `Model is a required field`
         }),
         type: Joi.string().valid(...VEHICLE_TYPES).optional().
         when(Joi.object({type: Joi.string().valid("CAR")}).unknown(), {
