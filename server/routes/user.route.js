@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
 const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
-const User = require('../db/models/generic/user.model');
+const User = require('../db/models/user.model');
 const router = express.Router();
 
 const { authenticate } = require('../middlewares/authenticate');
@@ -76,6 +76,35 @@ router.put('/', authenticate, async (req, res, next) => {
         res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.post('/validate-token', async (req, res, next) => {
+    const token = req.header("x-auth-token");
+    if (!token) {
+        return next(new ResponseError("Token not provided", HTTP_STATUS_CODES.UNAUTHORIZED), req, res, next);
+    }
+    try {
+        let valid = true;
+        let user = null;
+        const verified = AuthenticationService.verifyToken(token);
+        if (!verified) valid = false;
+        else {
+            user = await DbService.getById({ _id: mongoose.Types.ObjectId(verified._id) });
+            if (!user) valid = false;
+            else {
+                if (verified.iat <= user.lastPasswordReset.getTime() / 1000) valid = false;
+            }
+        }
+
+        res.status(HTTP_STATUS_CODES.OK).send({
+            valid: valid,
+            user: user
+        })
+    }
+    catch (error) {
+        console.log(error);
+        return next(new ResponseError(error.message, error.status || HTTP_STATUS_CODES.UNAUTHORIZED), req, res, next);
     }
 });
 
