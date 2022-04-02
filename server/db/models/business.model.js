@@ -21,7 +21,8 @@ const businessSchema = mongoose.Schema({
     },
     users: [{
         _id: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.USERS
+        ref: COLLECTIONS.USERS,
+        required: true
     }],
     phone: {
         type: String,
