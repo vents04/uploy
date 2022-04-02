@@ -9,6 +9,10 @@ export default class Profile extends Component {
     isAuthenticated: false,
     user: null
   }
+  componentDidMount() {
+    this.checkAuthentication();
+  }
+
 
   checkAuthentication = () => {
     const token = Auth.getToken();
@@ -33,7 +37,7 @@ export default class Profile extends Component {
             <p className="top-bar-text">Profile</p>
       </div>
       {
-        this.state.user
+        this.state.isAuthenticated
         ?<div className="profile-container">
         {
           this.state.user.profilePicture
@@ -43,9 +47,24 @@ export default class Profile extends Component {
             border: "1px solid #e7e7e7",
           }} />
           : <div className="profile-picture-container">
-            <p className="profile-picture-initials">{this.state.user.firstName.chaArt(0)}{this.state.user.lastName.charAt(0)}</p>
+            <p className="profile-picture-initials">{this.state.user.firstName.charAt(0)}{this.state.user.lastName.charAt(0)}</p>
           </div>
         }
+        <p className="modal-input-hint">First Name:</p>
+          <input type="text" placeholder="Type here" className="modal-input"
+          onInput={(evt) => {
+              this.setState({FirstName: evt.target.value, showError: false, error: ""})
+          }} defaultValue={this.state.user.firstName}/>
+          <p className="modal-input-hint">Last Name:</p>
+          <input type="text" placeholder="Type here" className="modal-input"
+          onInput={(evt) => {
+              this.setState({LastName: evt.target.value, showError: false, error: ""})
+          }} defaultValue={this.state.user.lastName}/>
+        <p className="modal-input-hint">Email:</p>
+          <input type="text" placeholder="Type here" className="modal-input"
+          onInput={(evt) => {
+              this.setState({email: evt.target.value, showError: false, error: ""})
+          }} defaultValue={this.state.user.email}/>
         </div>
         : null
       }

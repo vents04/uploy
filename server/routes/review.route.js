@@ -15,7 +15,7 @@ router.post("/", authenticate, async (req, res, next) => {
 
     try {
         const ride = await DbService.getOne(COLLECTIONS.RIDES, { rideId: mongoose.Types.ObjectId(req.body.rideId) });
-        if (!ride) return next(new ResponseError("A ride with this is does not exist", HTTP_STATUS_CODES.BAD_REQUEST));
+        if (!ride) return next(new ResponseError("A ride with this id does not exist", HTTP_STATUS_CODES.BAD_REQUEST));
 
         let userId = ride.userId;
 
@@ -23,10 +23,8 @@ router.post("/", authenticate, async (req, res, next) => {
         if (!vehicle) return next(new ResponseError("The vehicle for this ride is non-existent", HTTP_STATUS_CODES.NOT_FOUND));
 
 
-        let lenderId = vehicle.lenderId;
-
-        if(req.user._id == userId || req.user._id == lenderId){
-            const existingReview = await DbService.getOne(COLLECTIONS.REVIEW, { reviewerId: mongoose.Types.ObjectId(req.user._id) });
+        if(req.user._id == userId || req.user._id == vehicle.lenderId){
+            const existingReview = await DbService.getOne(COLLECTIONS.REVIEWS, { reviewerId: mongoose.Types.ObjectId(req.user._id) });
             if (existingReview) return next(new ResponseError("A review for this ride has already been created", HTTP_STATUS_CODES.CONFLICT));
         }else{
             return next(new ResponseError("You cannot create a review for this ride", HTTP_STATUS_CODES.BAD_REQUEST));
