@@ -1,5 +1,21 @@
-// Set your secret key. Remember to switch to your live secret key in production.
-// See your keys here: https://dashboard.stripe.com/apikeys
-const stripe = require('stripe')('sk_test_z6Wgj3W5n3eYSLEKPRJ4OrE900vpjOnFhP');
+const mongoose = require('mongoose');
+const db = mongoose.connection;
+const { COLLECTIONS, HTTP_STATUS_CODES } = require('../global');
 
-const product = await stripe.products.create({name: 'Gold Special'});
+const { STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global.js');
+const stripe = require('stripe')(STRIPE_SECRET_KEY);
+
+const vehicle = await stripe.products.create({name: 'Vehicle'});
+
+const StripeService = {
+    getPrice: function (collection, filter) {
+        return new Promise(async (resolve, reject) => {
+            validateCollection(collection, reject);
+            db.collection(collection).findOne(filter).then(resolve).catch((error) => {
+                reject(new ResponseError(error.message, HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+            });
+        })
+    }
+}
+
+module.exports = StripeService;
