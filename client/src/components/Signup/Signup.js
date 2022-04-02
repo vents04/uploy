@@ -40,6 +40,7 @@ export default class Signup extends Component {
                 Auth.setToken(response.data.token);
                 this.props.showLogin(false);
                 this.props.showSignup(false);
+                this.props.checkAuthentication();
             }).catch((error) => {
                 if (error.response) {
                     this.setState({ error: error.response.data.error, showError: true });
