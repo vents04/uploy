@@ -79,11 +79,9 @@ export default class Navbar extends Component {
                   </div>
                 }
             </Link>
-            : <>
-              <button className="action-button" onClick={() => {
+            : <button className="action-button" onClick={() => {
                 this.setState({showLogin: true})
               }}>Account</button>
-            </>
           }
         </div>
       </div>
