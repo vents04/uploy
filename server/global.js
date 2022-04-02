@@ -12,9 +12,9 @@ const COLLECTIONS = {
     USERS: "users",
     VEHICLES: "vehicles",
     RIDES: "rides",
-    LENDER: "lenders",
-    PAYMENT: "payments",
-    REVIEW: "reviews",
+    LENDERS: "lenders",
+    PAYMENTS: "payments",
+    REVIEWS: "reviews",
     BUSINESSES: "businesses"
 }
 
