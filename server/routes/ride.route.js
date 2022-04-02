@@ -18,18 +18,20 @@ router.post('/', authenticate, async(req, res, next) => {
 
         const ride = new Ride(req.body);
         if(ride.plannedPickupDt > ride.plannedReturnDt) return next(new ResponseError("Pickup date cannot be after return date ", HTTP_STATUS_CODES.CONFLICT));
-        const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: req.body.vehicleId, "$and": [
+        const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
             {status: {"$ne": RIDE_STATUSES.CANCELLED}},
             {status: {"$ne": RIDE_STATUSES.FINISHED}},
         ]});
 
         for(let current of rides){
-            if(!(ride.plannedPickupDt - THIRTY_MINUTES_IN_MILLISECONDS > current.plannedReturnDt) || !(ride.plannedReturnDt + THIRTY_MINUTES_IN_MILLISECONDS < current.plannedPickupDt)){
+            if(!(ride.plannedPickupDt - THIRTY_MINUTES_IN_MILLISECONDS > current.plannedReturnDt) 
+            && !(ride.plannedReturnDt + THIRTY_MINUTES_IN_MILLISECONDS < current.plannedPickupDt)){
                 return next(new ResponseError("Dates cannot overlap", HTTP_STATUS_CODES.CONFLICT));
             }
         }
 
         ride.userId = req.user._id.toString();
+        ride.status = RIDE_STATUSES.ONGOING
         await DbService.create(COLLECTIONS.RIDES, ride);        
 
         return res.sendStatus(HTTP_STATUS_CODES.OK);

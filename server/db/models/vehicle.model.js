@@ -3,16 +3,10 @@ const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPE
 
 const vehicleSchema = mongoose.Schema({
     lenderId: {
-        userId: {
-            type: mongoose.Types.ObjectId,
-            ref: COLLECTIONS.USERS,
-            required: function() {return this.business.length == 0}
-        },
-        businessId: {
-            type: mongoose.Types.ObjectId,
-            ref: COLLECTIONS.BUSINESSES,
-            required: function() {return this.userId.length == 0}
-        }
+        type: mongoose.Types.ObjectId,
+        ref: COLLECTIONS.USERS,
+        required: true
+        
     },
     title: {
         type: String,
@@ -24,12 +18,6 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         minLength: 1,
         maxLength: 500,
-        required: true
-    },
-    model: {
-        type: String,
-        minLength: 1,
-        maxLength: 70, // the actual characters length of the longest car name + a bit more chars - Land Rover Range Rover Evoque 2.0 TD4 E-Capability 4x4 HSE Dynam
         required: true
     },
     maker: {
@@ -120,7 +108,13 @@ const vehicleSchema = mongoose.Schema({
             min: 1,
             required: true
         }
-    }
+    },
+    pictures: [{
+        file:{
+            type: String,
+            required: true
+        }
+    }]
 })
 const Vehicle = mongoose.model(DATABASE_MODELS.VEHICLE, vehicleSchema);
 module.exports = Vehicle;
