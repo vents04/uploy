@@ -3,7 +3,7 @@ const ROOT_URLS_PRODUCTION = {
 }
 
 const ROOT_URLS_DEVELOPMENT = {
-    API: "http://192.168.43.236:6140",
+    API: "http://localhost:6140",
     WEB_URL: "http://localhost:3000"
 }
 
