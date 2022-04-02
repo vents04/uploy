@@ -7,7 +7,8 @@ import './PostVehicle.scss';
 
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import ApiRequests from '../../classes/ApiRequests';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
+import { Sentry } from 'react-activity';
 
 export default class PostVehicle extends Component {
 
@@ -30,6 +31,8 @@ export default class PostVehicle extends Component {
     photos: [],
     error: "",
     showError: false,
+    showLoading: false,
+    navigateToHome: false
   }
 
   readFileAsText = (file) => {
@@ -49,6 +52,7 @@ export default class PostVehicle extends Component {
 }
 
   publishVehicle = async () => {
+    this.setState({showLoading: true})
     let finalPickupLocations = [];
     for(let location of this.state.pickupLocations) {
       const place = await this.getPlace(location.placeId);
@@ -95,7 +99,7 @@ export default class PostVehicle extends Component {
       payload.unlockTypes = this.state.unlockTypes;
     }
     ApiRequests.post("vehicle", {}, payload, true).then((response) => {
-      console.log("published")
+      this.setState({navigateToHome: true})
     }).catch((error) => {
       if (error.response) {
         this.setState({error: error.response.data.error, showError: true});
@@ -104,6 +108,8 @@ export default class PostVehicle extends Component {
       } else {
         this.setState({error: "Request setting error", showError: true});
       }
+    }).finally(() => {
+      this.setState({showLoading: false})
     })
   }
 
@@ -120,6 +126,11 @@ export default class PostVehicle extends Component {
 }
 
   render() {
+    if(this.state.navigateToHome) {
+      return (
+        <Navigate to="/"></Navigate>
+      )
+    }
     return (
       <>
         <div className="top-bar">
@@ -302,7 +313,13 @@ export default class PostVehicle extends Component {
               this.state.showError
               && <p className="error-box" style={{width: '90%'}}>{this.state.error}</p>
             }
-            <button className="action-button" style={{width: '90%', marginTop: '16px'}} onClick={this.publishVehicle}>Publish vehicle</button>
+            <button className="action-button" style={{width: '90%', marginTop: '16px'}} onClick={this.publishVehicle}>
+              {
+                this.state.showLoading
+                ? <Sentry size={18} />
+                : "Publish vehicle"
+              }
+            </button>
           </div>
         </div>
       </>

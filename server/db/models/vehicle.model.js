@@ -109,8 +109,8 @@ const vehicleSchema = mongoose.Schema({
             required: true
         }
     },
-    pictures: [{
-        file:{
+    photos: [{
+        photo:{
             type: String,
             required: true
         }

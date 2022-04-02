@@ -113,8 +113,10 @@ export default class Home extends Component {
           && <div className="become-lender-container" style={{
             backgroundImage: `url(${cta})`
           }}>
-            <p className="become-lender-text">Become lender</p>
-            <button className="become-lender-button">Sign up</button>
+            <p className="become-lender-text">Add vehicle</p>
+            <Link to="/add-vehicle">
+              <button className="become-lender-button">Proceed</button>
+            </Link>
           </div>
         }
       </>

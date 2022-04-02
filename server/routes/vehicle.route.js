@@ -15,7 +15,7 @@ router.post("/", authenticate, async (req, res, next) => {
     const { error } = postVehicleValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
-    const lender = await DbService.getById(COLLECTIONS.LENDERS, mongoose.Types.ObjectId(req.body.lenderId));
+    const lender = await DbService.getOne(COLLECTIONS.LENDERS, {userId: mongoose.Types.ObjectId(req.user._id)});
     if(!lender || lender.status != LENDER_STATUSES.ACTIVE){
         return next(new ResponseError("You are not a lender or you have no been approved to be one yet. You can become one through the button in the home page.", HTTP_STATUS_CODES.NOT_FOUND));
     }
@@ -23,8 +23,7 @@ router.post("/", authenticate, async (req, res, next) => {
         const vehicle = new Vehicle(req.body);
         await DbService.create(COLLECTIONS.VEHICLES, vehicle);
 
-        res.status(HTTP_STATUS_CODES.OK);
-
+        res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
@@ -48,36 +47,57 @@ router.put("/", authenticate, async (req, res, next) => {
 
 })
 
-router.post("/vehicle/search", async (req, res, next) => {
-    if (!req.body.lat || !req.body.lon) {
+router.get("/search", async (req, res, next) => {
+    console.log(req.query)
+    if (!req.query.lat || !req.query.lon) {
         return next(new ResponseError("Both latitude and longitude must be provided", HTTP_STATUS_CODES.BAD_REQUEST));
     }
     try {
         let vehiclesForCheck= [];
         const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {})
         for (let vehicle of vehicles) {
-            let lat1 = vehicle.location.lat;
-            let lat2 = req.body.lat;
-            let lng1 = vehicle.location.lon;
-            let lng2 = req.body.lom;
+            Object.assign(vehicle, { distances: [] });
+            for(let pickupLocation of vehicle.pickupLocations){
+                let lat1 = pickupLocation.lat;
+                let lat2 = req.query.lat;
+                let lng1 = pickupLocation.lon;
+                let lng2 = req.query.lon;
 
-            lng1 = lng1 * Math.PI / 180;
-            lng2 = lng2 * Math.PI / 180;
+                lng1 = lng1 * Math.PI / 180;
+                lng2 = lng2 * Math.PI / 180;
 
-            lat1 = lat1 * Math.PI / 180;
-            lat2 = lat2 * Math.PI / 180;
+                lat1 = lat1 * Math.PI / 180;
+                lat2 = lat2 * Math.PI / 180;
 
-            let dlon = lng2 - lng1;
-            let dlat = lat2 - lat1;
-            let a = Math.pow(Math.sin(dlat / 2), 2)
-                + Math.cos(lat1) * Math.cos(lat2)
-                * Math.pow(Math.sin(dlon / 2), 2);
+                let dlon = lng2 - lng1;
+                let dlat = lat2 - lat1;
+                let a = Math.pow(Math.sin(dlat / 2), 2)
+                    + Math.cos(lat1) * Math.cos(lat2)
+                    * Math.pow(Math.sin(dlon / 2), 2);
 
-            let c = 2 * Math.asin(Math.sqrt(a));
+                let c = 2 * Math.asin(Math.sqrt(a));
 
-            let radius = 6371;
+                let radius = 6371;
 
-            let distance = c * radius;
+                let distance = c * radius;
+
+                const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
+                    {status: {"$ne": RIDE_STATUSES.CANCELLED}},
+                    {status: {"$ne": RIDE_STATUSES.FINISHED}},
+                ]});
+    
+                for(let ride of rides){
+                    if((req.query.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
+                    && (req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
+                    && distance <= 20){
+                        const vehicleOwner = await DbService.getOne(COLLECTIONS.LENDERS, {lenderId: vehicle.lenderId})
+                        Object.assign(vehicle, {user: vehicleOwner});
+                        vehicle.distances.push(distance);
+                        vehiclesForCheck.push(vehicle);
+                    }
+                }
+            }
+            
 
             const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
                 {status: {"$ne": RIDE_STATUSES.CANCELLED}},
@@ -85,8 +105,8 @@ router.post("/vehicle/search", async (req, res, next) => {
             ]});
 
             for(let ride of rides){
-                if(!(req.body.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
-                && !(req.body.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
+                if(!(req.query.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
+                && !(req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
                 && distance > 20){
                     continue;
                 }

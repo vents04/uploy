@@ -20,7 +20,8 @@ export default class Search extends Component {
             lat: null,
             lon: null,
             label: null
-        }
+        },
+        results: []
     }
 
     componentDidMount() {
@@ -46,7 +47,9 @@ export default class Search extends Component {
             place.lat = response.data.results[0].geometry.location.lat;
             place.lon = response.data.results[0].geometry.location.lng;
             place.label = response.data.results[0].formatted_address;
-            this.setState({place: place});
+            this.setState({place: place}, () => {
+                this.search();
+            });
         }).catch((error) => {
             console.log(error);
           this.setState({
@@ -57,6 +60,16 @@ export default class Search extends Component {
                   placeId: null
               }
           })
+        })
+    }
+
+    search = () => {
+        const pdt = new Date(this.state.pickupDate + "T" + this.state.pickupTime );
+        const rdt = new Date(this.state.returnDate + "T" + this.state.returnTime );
+        ApiRequests.get(`vehicle/search?pdt=${pdt.getTime()}&rdt=${rdt.getTime()}&lat=${this.state.place.lat}&lon=${this.state.place.lon}`).then((response) => {
+            this.setState({results: response.data.results})
+        }).catch((error) => {
+            throw new Error(error)
         })
     }
 
@@ -107,8 +120,13 @@ export default class Search extends Component {
                 </div>
                 <div className="results-container">
                     <p className="results-title">Matched vehicles</p>
-                    <Result />
-                    <Result />
+                    {
+                        this.state.results.length > 0
+                        ? this.state.results.map((result) =>
+                            <Result result={result} />
+                        )
+                        : <p className="notation">No vehicles found</p>
+                    }
                 </div>
             </>
         )
