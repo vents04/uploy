@@ -53,8 +53,10 @@ const StripeService = {
                 email: user.email
             });
 
-            user.customerId = customer.id
-            await DbService.update(COLLECTIONS.USERS, {_id: user._id}, user);
+            if(!user.customerId){
+                user.customerId = customer.id
+                await DbService.update(COLLECTIONS.USERS, {_id: user._id}, user);
+            }
 
             try {
                 resolve(customer)
