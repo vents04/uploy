@@ -48,3 +48,8 @@ body {
 p {
   margin-block: 0px;
 }
+
+.icon {
+  cursor: pointer;
+  outline: none;
+}

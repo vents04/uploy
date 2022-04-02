@@ -7,6 +7,19 @@ const rideSchema = mongoose.Schema({
         ref: COLLECTIONS.VEHICLES,
         required: true
     },
+    price: {
+        currency:{
+            type: String,
+            enum: Object.values(CURRENCY_TYPES),
+            required: true
+        },
+        amount: {
+            type: Number,
+            min: 1,
+            required: true
+        },
+        ref: COLLECTIONS.VEHICLES
+    },
     userId: {
         type: mongoose.Types.ObjectId,
         ref: COLLECTIONS.USERS,

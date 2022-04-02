@@ -3,9 +3,16 @@ const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPE
 
 const vehicleSchema = mongoose.Schema({
     lenderId: {
-        type: mongoose.Types.ObjectId,
-        required: true,
-        ref: COLLECTIONS.USERS
+        userId: {
+            type: mongoose.Types.ObjectId,
+            ref: COLLECTIONS.USERS,
+            required: function() {return this.bussiness.length == 0}
+        },
+        bussinessId: {
+            type: mongoose.Types.ObjectId,
+            ref: COLLECTIONS.BUSSINESSES,
+            required: function() {return this.userId.length == 0}
+        }
     },
     title: {
         type: String,
