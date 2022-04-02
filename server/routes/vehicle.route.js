@@ -48,4 +48,66 @@ router.put("/", authenticate, async (req, res, next) => {
 
 })
 
+router.post("/vehicle/search", async (req, res, next) => {
+    if (!req.body.lat || !req.body.lon) {
+        return next(new ResponseError("Both latitude and longitude must be provided", HTTP_STATUS_CODES.BAD_REQUEST));
+    }
+    try {
+        let sorted = [];
+        const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {})
+        for (let vehicle of vehicles) {
+            let lat1 = vehicle.location.lat;
+            let lat2 = req.body.lat;
+            let lng1 = vehicle.location.lng;
+            let lng2 = req.body.lng;
+
+            lng1 = lng1 * Math.PI / 180;
+            lng2 = lng2 * Math.PI / 180;
+
+            lat1 = lat1 * Math.PI / 180;
+            lat2 = lat2 * Math.PI / 180;
+
+            let dlon = lng2 - lng1;
+            let dlat = lat2 - lat1;
+            let a = Math.pow(Math.sin(dlat / 2), 2)
+                + Math.cos(lat1) * Math.cos(lat2)
+                * Math.pow(Math.sin(dlon / 2), 2);
+
+            let c = 2 * Math.asin(Math.sqrt(a));
+
+            let radius = 6371;
+
+            let distance = c * radius;
+            Object.assign(vehicle, { distance: distance });
+            if (distance > 20) {
+                continue;
+            }
+            sorted.push(vehicle);
+        }
+
+        const reviews = await DbService.getMany(COLLECTIONS.REVIEWS, {});
+        for (let i = 0; i < sorted.length; i++) {
+            let sumOfAllRatings = 3, counter = 1;
+            for (let review of reviews) {
+                if (review.recieverId.toString() == allTrainers[i].userId.toString()) {
+                    sumOfAllRatings += review.rating;
+                    counter++;
+                }
+            }
+            let overallRating = Number.parseFloat(sumOfAllRatings / counter).toFixed(1);
+            if (req.query.minRating) {
+                minRating = req.query.minRating
+                if (overallRating < minRating) {
+                    continue;
+                }
+                allTrainers[i].criteriasMet++;
+            }
+            Object.assign(allTrainers[i], { rating: overallRating, reviews: reviews.length });
+        }
+
+    } catch (error) {
+        return next(new ResponseError(error.message || "Internal server error", error.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+})
+
 module.exports = router;
