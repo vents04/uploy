@@ -1,0 +1,36 @@
+@import '../../../assets/styles/global.styles.css';
+
+.ride-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.ride-title {
+    padding: 2rem;
+    font-family: "Main Black", sans-serif;
+    font-size: 48px;
+}
+
+.ride-image {
+    background-size: contain;
+    width: 100%;
+    height: 300px;
+    background-repeat: no-repeat;
+    background-position: center center;
+}
+
+.ride-description {
+    font-family: "Main Regular", sans-serif;
+    font-size: 18px;
+    color: #aaa;
+    padding: 1rem;
+}
+
+.action-button {
+    width: 90% !important;
+    padding: 1rem;
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 20px;
+}
