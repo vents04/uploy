@@ -68,6 +68,12 @@ const ApiRequests = {
                 headers: finalHeaders
             }
         )
+    },
+
+    getPlace: async (id) => {
+        return axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?place_id=${id}&key=AIzaSyAYQnnCgQuzHGk6WMcbhtOPJHROn5vycE4`
+        )
     }
 }
 

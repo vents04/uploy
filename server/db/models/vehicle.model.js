@@ -68,7 +68,7 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    pickupLocations: {
+    pickupLocations: [{
         address: {
             type: String,
             required: true
@@ -85,7 +85,7 @@ const vehicleSchema = mongoose.Schema({
             max: 180,
             required: true
         } 
-    },
+    }],
     returnLocations: [{
         address: {
             type: String,

@@ -15,26 +15,5 @@
 
 .navbar-logo-text {
     font-family: "Logo", sans-serif;
-    font-size: 32px;
-}
-
-.profile-picture-container {
-    width: 50px;
-    height: 50px;
-    background-color: #e7e7e7;
-    border-radius: 50%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    background-position: center center;
-    background-repeat: no-repeat;
-    background-size: cover;
-}
-
-.profile-picture-initials {
-    font-family: "Main Bold", sans-serif;
-    font-size: 12.5px;
-    color: "#777";
+    font-size: 24px;
 }

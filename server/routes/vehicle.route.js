@@ -15,7 +15,7 @@ router.post("/", authenticate, async (req, res, next) => {
     const { error } = postVehicleValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
-    const lender = await DbService.getById(COLLECTIONS.LENDERS, { "$or": [{lenderId: mongoose.Types.ObjectId(req.body.lenderId.userId)}, {lenderId: mongoose.Types.ObjectId(req.body.lenderId.bussinessId)}]});
+    const lender = await DbService.getById(COLLECTIONS.LENDERS, { "$or": [{lenderId: mongoose.Types.ObjectId(req.body.userId)}, {lenderId: mongoose.Types.ObjectId(req.body.lenderId.businessId)}]});
     if(!lender && lender.status != LENDER_STATUSES.ACTIVE){
         return next(new ResponseError("Lender wasn't found or his status wasn't active", HTTP_STATUS_CODES.NOT_FOUND));
     }
