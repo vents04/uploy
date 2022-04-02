@@ -31,6 +31,7 @@ router.post('/', authenticate, async(req, res, next) => {
         }
 
         ride.userId = req.user._id.toString();
+        ride.status = RIDE_STATUSES.ONGOING
         await DbService.create(COLLECTIONS.RIDES, ride);        
 
         return res.sendStatus(HTTP_STATUS_CODES.OK);
