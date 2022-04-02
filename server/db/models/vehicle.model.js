@@ -120,7 +120,13 @@ const vehicleSchema = mongoose.Schema({
             min: 1,
             required: true
         }
-    }
+    },
+    pictures: [{
+        file:{
+            type: String,
+            required: true
+        }
+    }]
 })
 const Vehicle = mongoose.model(DATABASE_MODELS.VEHICLE, vehicleSchema);
 module.exports = Vehicle;

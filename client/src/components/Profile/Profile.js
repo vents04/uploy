@@ -1,14 +1,55 @@
 import React, { Component } from 'react'
+import ApiRequests from '../../classes/ApiRequests';
+import Auth from '../../classes/Auth';
 
 import { IoMdClose } from 'react-icons/io'
 
 export default class Profile extends Component {
+  state = {
+    isAuthenticated: false,
+    user: null
+  }
+
+  checkAuthentication = () => {
+    const token = Auth.getToken();
+    if(!token) return;
+    ApiRequests.post("user/validate-token", {}, {}, true).then((response) => {
+      this.setState({isAuthenticated: response.data.valid, user: response.data.user});
+    }).catch((error) => {
+      if (error.response) {
+        alert(error.response.data.error);
+      } else if (error.request) {
+        alert("Response not returned");
+      } else {
+        alert("Request setting error");
+      }
+    })
+  }
+
   render() {
     return (
-      <div className="top-bar">
+      <><div className="top-bar">
             <IoMdClose size={24} className="icon" />
             <p className="top-bar-text">Profile</p>
       </div>
+      {
+        this.state.user
+        ?<div className="profile-container">
+        {
+          this.state.user.profilePicture
+          ? <div className="profile-picture-container" style={{
+            backgroundImage: `url(${this.state.user.profilePicture})`,
+            boxShadow: "3px 3px 3px #e7e7e7",
+            border: "1px solid #e7e7e7",
+          }} />
+          : <div className="profile-picture-container">
+            <p className="profile-picture-initials">{this.state.user.firstName.chaArt(0)}{this.state.user.lastName.charAt(0)}</p>
+          </div>
+        }
+        </div>
+        : null
+      }
+      </>
     )
   }
 }

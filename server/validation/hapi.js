@@ -319,6 +319,9 @@ const postVehicleValidation = (data) => {
             currency: Joi.string().valid(...CURRENCY_TYPES).required(),
             amount: Joi.number().min(1).required(),
         }).required(),
+        pictures: Joi.array().items(Joi.object({
+            file: Joi.string().required()
+        })).required()
     })
     return schema.validate(data);
 }
@@ -411,6 +414,9 @@ const updateVehicleValidation = (data) => {
             currency: Joi.string().valid(...CURRENCY_TYPES).optional(),
             amount: Joi.number().min(1).optional(),
         }).optional(),
+        pictures: Joi.array().items(Joi.object({
+            file: Joi.string().required()
+        })).optional()
     })
     return schema.validate(data);
 }
