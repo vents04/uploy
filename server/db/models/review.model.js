@@ -4,6 +4,12 @@ const { COLLECTIONS } = require('../../global');
 const reviewSchema = mongoose.Schema({
     rideId: {
         type: mongoose.Types.ObjectId,
+        ref: COLLECTIONS.RIDES,
+        required: true
+    },
+    vehicleId: {
+        type: mongoose.Types.ObjectId,
+        ref: COLLECTIONS.VEHICLES,
         required: true
     },
     reviwerId: {

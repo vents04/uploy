@@ -1,7 +1,7 @@
 const axios = require('axios');
 const Auth = require('./Auth');
 
-const { ROOT_URL_API, AUTHENTICATION_TOKEN_KEY } = require('../global');
+const { ROOT_URLS, AUTHENTICATION_TOKEN_KEY } = require('../global');
 
 const ApiRequests = {
     get: async (path, headers, applyAuthToken) => {
@@ -13,7 +13,7 @@ const ApiRequests = {
             finalHeaders[`${AUTHENTICATION_TOKEN_KEY}`] = token;
         }
         return axios.get(
-            `${ROOT_URL_API}/${path}`,
+            `${ROOT_URLS.API}/${path}`,
             {
                 headers: finalHeaders,
             }
@@ -29,7 +29,7 @@ const ApiRequests = {
             finalHeaders[`${AUTHENTICATION_TOKEN_KEY}`] = token;
         }
         return axios.post(
-            `${ROOT_URL_API}/${path}`,
+            `${ROOT_URLS.API}/${path}`,
             payload,
             {
                 headers: finalHeaders,
@@ -46,7 +46,7 @@ const ApiRequests = {
             finalHeaders[`${AUTHENTICATION_TOKEN_KEY}`] = token;
         }
         return axios.put(
-            `${ROOT_URL_API}/${path}`,
+            `${ROOT_URLS.API}/${path}`,
             payload,
             {
                 headers: finalHeaders
@@ -63,7 +63,7 @@ const ApiRequests = {
             finalHeaders[`${AUTHENTICATION_TOKEN_KEY}`] = token;
         }
         return axios.delete(
-            `${ROOT_URL_API}/${path}`,
+            `${ROOT_URLS.API}/${path}`,
             {
                 headers: finalHeaders
             }

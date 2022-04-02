@@ -36,17 +36,19 @@ const signupValidation = (data) => {
         }),
         phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `User's phone should have at least 8 characters`,
+            "string.min": "User's phone should have at least 8 characters",
+            "string.max": "User's phone should have at most 15 characters",
             "string.empty": `User's phone should not be empty`,
             "any.required": `User's phone is a required field`
         }).custom((phone, helper) => {
             if (phone) {
                 const regionCode = PhoneNumber(phone).getRegionCode();
                 if (!regionCode) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The user phone number appears to be invalid");
                 }
                 const phoneNumber = PhoneNumber(phone, regionCode);
                 if (!phoneNumber || !phoneNumber.isValid()) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The user phone number appears to be invalid");
                 }
             }
             return true;
@@ -98,19 +100,21 @@ const userUpdateValidation = data => {
             "string.max": `First name should have at most 200 characters`,
             "any.required": `First name is a required field`
         }),
-        phone: Joi.string().optional().messages({
+        phone: Joi.string().min(8).max(15).optional().messages({
             "string.base": `User phone should have at least 8 characters`,
+            "string.min": "User's phone should have at least 8 characters",
+            "string.max": "User's phone should have at most 15 characters",
             "string.empty": `User phone should not be empty`,
             "any.required": `User phone is a required field`
         }).custom((phone, helper) => {
             if (phone) {
                 const regionCode = PhoneNumber(phone).getRegionCode();
                 if (!regionCode) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The user phone number appears to be invalid");
                 }
                 const phoneNumber = PhoneNumber(phone, regionCode);
                 if (!phoneNumber || !phoneNumber.isValid()) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The user phone number appears to be invalid");
                 }
             }
             return true;
