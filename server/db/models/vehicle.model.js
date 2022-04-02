@@ -6,7 +6,7 @@ const vehicleSchema = mongoose.Schema({
         userId: {
             type: mongoose.Types.ObjectId,
             ref: COLLECTIONS.USERS,
-            required: function() {return this.bu22siness.length == 0}
+            required: function() {return this.business.length == 0}
         },
         businessId: {
             type: mongoose.Types.ObjectId,
