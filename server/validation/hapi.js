@@ -1,7 +1,7 @@
 const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
-const { LENDER_STATUSES, RIDE_STATUSES } = require('../global');
+const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({
@@ -216,9 +216,18 @@ const lenderValidation = (data) => {
     return schema.validate(data);
 }
 
-<<<<<<< HEAD
 const postVehicleValidation = (data) => {
     const schema = Joi.object({
+        lenderId: Joi.string().custom((value, helper) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Invalid lender id");
+            }
+            return true;
+        }).required().messages({
+            "string.base": "Please provide an existing lender before submitting",
+            "string.empty": "Please provide an existing lender before submitting",
+            "any.required": "Please provide an existing lender before submitting"
+        }),
         title: Joi.string().min(1).max(100).required().messages({
             "string.base": `Title should have at least 1 character`,
             "string.empty": `Title should not be empty`,
@@ -240,15 +249,46 @@ const postVehicleValidation = (data) => {
             "string.max": `Model should have at most 200 characters`,
             "any.required": `Model is a required field`
         }),
-        maker: {
-            
-        }
+        type: Joi.string().valid(...VEHICLE_TYPES).required().
+        when(Joi.object({type: Joi.string().valid("CAR")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...CAR_MAKERS).required()
+            })
+        }).
+        when(Joi.object({type: Joi.string().valid("BIKE")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...BIKE_MAKERS).required()
+            })
+        }).
+        when(Joi.object({type: Joi.string().valid("SCOOTER")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...SCOOTER_MAKERS).required()
+            })
+        }),
+        status: Joi.string().valid(...VEHICLE_STATUSES).required(),
+        seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required() }).min(1).max(8),
+        smartCarKey: Joi.string().required(),
+        pickupLocations: Joi.object({
+            address: Joi.string().required(),
+            lat: Joi.number().required(),
+            lng: Joi.number().required(),
+        }).required(),
+        returnLocations: Joi.object({
+            address: Joi.string().required(),
+            lat: Joi.number().required(),
+            lng: Joi.number().required(),
+        }).required(),
+        unlockTypes: Joi.string().valid(...UNLOCK_TYPES).required(),
+        price: Joi.object({
+            currency: Joi.string().valid(...CURRENCY_TYPES).required(),
+            amount: Joi.number().min(1).required(),
+        }).required(),
+    })
+}
 
-=======
 const updateLenderValidation = (data) => {
     const schema = Joi.object({
         status: Joi.string().valid(...LENDER_STATUSES).required()
->>>>>>> a0ac46ceb527e24868936f91a48f9afc6e7b661d
     })
     return schema.validate(data);
 }
