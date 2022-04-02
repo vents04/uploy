@@ -56,7 +56,8 @@ router.get("/search", async (req, res, next) => {
         let vehiclesForCheck= [];
         const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {})
         for (let vehicle of vehicles) {
-            Object.assign(vehicle, { distances: [] });
+            let distances = [];
+            let canBeGot = true;
             for(let pickupLocation of vehicle.pickupLocations){
                 let lat1 = pickupLocation.lat;
                 let lat2 = req.query.lat;
@@ -87,39 +88,31 @@ router.get("/search", async (req, res, next) => {
                 ]});
     
                 for(let ride of rides){
-                    if((req.query.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
-                    && (req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
-                    && distance <= 20){
-                        const vehicleOwner = await DbService.getOne(COLLECTIONS.LENDERS, {lenderId: vehicle.lenderId})
-                        Object.assign(vehicle, {user: vehicleOwner});
-                        vehicle.distances.push(distance);
-                        vehiclesForCheck.push(vehicle);
+                    if(!(req.query.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
+                    && !(req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
+                    && distance > 20){
+                        canBeGot = false;
                     }
                 }
-            }
-            
-
-            const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
-                {status: {"$ne": RIDE_STATUSES.CANCELLED}},
-                {status: {"$ne": RIDE_STATUSES.FINISHED}},
-            ]});
-
-            for(let ride of rides){
-                if(!(req.query.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
-                && !(req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
-                && distance > 20){
-                    continue;
+                if(canBeGot){
+                    const vehicleOwner = await DbService.getOne(COLLECTIONS.LENDERS, {_id: mongoose.Types.ObjectId(vehicle.lenderId)})
+                    Object.assign(vehicle, {user: vehicleOwner});
+                    distances.push(distance);
+                    let shortestDistance = distances[0];
+                    for(let j = 0; j < distances.length; j++){
+                        if(distances[j] < shortestDistance){
+                            shortestDistance = distances[j];
+                        }
+                    }
+                    Object.assign(vehicle, {distances: distances}, {shortestDistance: shortestDistance});
+                    vehiclesForCheck.push(vehicle);
                 }
             }
-
-            const vehicleOwner = await DbService.getOne(COLLECTIONS.LENDERS, {lenderId: vehicle.lenderId})
-            Object.assign(vehicle, { distance: distance }, {user: vehicleOwner});
-            vehiclesForCheck.push(vehicle);
         }
 
         for (let i = 0; i < vehiclesForCheck.length; i++) {
             for (let j = 0; j < (vehiclesForCheck.length - i - 1); j++) {
-                if (vehiclesForCheck[j].distance < vehiclesForCheck[j + 1].distance) {
+                if (vehiclesForCheck[j].shortestDistance < vehiclesForCheck[j + 1].shortestDistance) {
                     var temp = vehiclesForCheck[j]
                     vehiclesForCheck[j] = vehiclesForCheck[j + 1]
                     vehiclesForCheck[j + 1] = temp
