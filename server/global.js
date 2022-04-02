@@ -12,9 +12,10 @@ const COLLECTIONS = {
     USERS: "users",
     VEHICLES: "vehicles",
     RIDES: "rides",
-    LENDER: "lenders",
-    PAYMENT: "payments",
-    REVIEW: "reviews"
+    LENDERS: "lenders",
+    PAYMENTS: "payments",
+    REVIEWS: "reviews",
+    BUSINESSES: "businesses"
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";
@@ -1196,9 +1197,6 @@ module.exports = {
     CURRENCY_TYPES: CURRENCY_TYPES,
     ONE_DAY_IN_MILLISECONDS: ONE_DAY_IN_MILLISECONDS,
     THIRTY_MINUTES_IN_MILLISECONDS: THIRTY_MINUTES_IN_MILLISECONDS,
-<<<<<<< HEAD
-    PAYMENT_STATUSES: PAYMENT_STATUSES
-=======
+    PAYMENT_STATUSES: PAYMENT_STATUSES,
     BUSINESS_STATUSES
->>>>>>> 0e8335db384a31965f7ef94e9e692503b6d77f03
 }
