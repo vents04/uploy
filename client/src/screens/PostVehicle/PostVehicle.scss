@@ -1,0 +1,17 @@
+@import '../../../assets/styles/global.styles.css';
+
+.top-bar {
+    width: 100vw;
+    padding: 2rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    border-bottom: 1px solid #e7e7e7;
+}
+
+.top-bar-text {
+    font-family: "Main Bold", sans-serif;
+    font-size: 20px;
+    margin-left: 1rem;
+}
