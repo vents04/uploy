@@ -1,7 +1,7 @@
 const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
-const { LENDER_STATUSES, RIDE_STATUSES } = require('../global');
+const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({
@@ -218,18 +218,28 @@ const lenderPostValidation = (data) => {
 
 const postVehicleValidation = (data) => {
     const schema = Joi.object({
+        lenderId: Joi.string().custom((value, helper) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Invalid lender id");
+            }
+            return true;
+        }).required().messages({
+            "string.base": "Please provide an existing lender before submitting",
+            "string.empty": "Please provide an existing lender before submitting",
+            "any.required": "Please provide an existing lender before submitting"
+        }),
         title: Joi.string().min(1).max(100).required().messages({
             "string.base": `Title should have at least 1 character`,
             "string.empty": `Title should not be empty`,
             "string.min": `Title should have at least 1 character`,
-            "string.max": `Title should have at most 200 characters`,
+            "string.max": `Title should have at most 100 characters`,
             "any.required": `Title is a required field`
         }),
         description: Joi.string().min(1).max(500).required().messages({
             "string.base": `Description should have at least 1 character`,
             "string.empty": `Description should not be empty`,
             "string.min": `Description should have at least 1 character`,
-            "string.max": `Description should have at most 200 characters`,
+            "string.max": `Description should have at most 500 characters`,
             "any.required": `Description is a required field`
         }),
         model: Joi.string().min(1).max(70).required().messages({
@@ -239,10 +249,165 @@ const postVehicleValidation = (data) => {
             "string.max": `Model should have at most 200 characters`,
             "any.required": `Model is a required field`
         }),
-        maker: {
-            
-        }
-    });
+        type: Joi.string().valid(...VEHICLE_TYPES).required().
+        when(Joi.object({type: Joi.string().valid("CAR")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...CAR_MAKERS).required()
+            })
+        }).
+        when(Joi.object({type: Joi.string().valid("BIKE")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...BIKE_MAKERS).required()
+            })
+        }).
+        when(Joi.object({type: Joi.string().valid("SCOOTER")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...SCOOTER_MAKERS).required()
+            })
+        }),
+        status: Joi.string().valid(...VEHICLE_STATUSES).required(),
+        seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required() }).min(1).max(8),
+        smartCarKey: Joi.string().required(),
+        pickupLocation: Joi.object({
+            address: Joi.string().max(1000).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Number should have at least 1 character`,
+                "number.empty": `Number should not be empty`,
+                "number.min": `Number should not be less than -90`,
+                "number.max": `Number should not be more than 90`,
+            }),
+            lon: Joi.number().min(-180).max(180).messages({
+                "number.base": `Address should have at least 1 character`,
+                "number.empty": `Address should not be empty`,
+                "number.min": `Number should not be less than -180`,
+                "number.max": `Number should not be more than 180`,
+            })
+        }).required().messages({
+            "any.required": `pickupLocation is a required field`
+        }),
+        returnLocations: Joi.object({
+            address: Joi.string().max(1000).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Number should have at least 1 character`,
+                "number.empty": `Number should not be empty`,
+                "number.min": `Number should not be less than -90`,
+                "number.max": `Number should not be more than 90`,
+            }),
+            lon: Joi.number().min(-180).max(180).messages({
+                "number.base": `Address should have at least 1 character`,
+                "number.empty": `Address should not be empty`,
+                "number.min": `Number should not be less than -180`,
+                "number.max": `Number should not be more than 180`,
+            })
+        }).required().messages({
+            "any.required": `pickupLocation is a required field`
+        }),
+        unlockTypes: Joi.string().valid(...UNLOCK_TYPES).required(),
+        price: Joi.object({
+            currency: Joi.string().valid(...CURRENCY_TYPES).required(),
+            amount: Joi.number().min(1).required(),
+        }).required(),
+    })
+    return schema.validate(data);
+}
+
+const updateVehicleValidation = (data) => {
+    const schema = Joi.object({
+        title: Joi.string().min(1).max(100).optional().messages({
+            "string.base": `Title should have at least 1 character`,
+            "string.empty": `Title should not be empty`,
+            "string.min": `Title should have at least 1 character`,
+            "string.max": `Title should have at most 100 characters`,
+            "any.required": `Title is a required field`
+        }),
+        description: Joi.string().min(1).max(500).optional().messages({
+            "string.base": `Description should have at least 1 character`,
+            "string.empty": `Description should not be empty`,
+            "string.min": `Description should have at least 1 character`,
+            "string.max": `Description should have at most 500 characters`,
+            "any.required": `Description is a required field`
+        }),
+        model: Joi.string().min(1).max(70).optional().messages({
+            "string.base": `Model should have at least 1 character`,
+            "string.empty": `Model should not be empty`,
+            "string.min": `Model should have at least 1 character`,
+            "string.max": `Model should have at most 200 characters`,
+            "any.required": `Model is a required field`
+        }),
+        type: Joi.string().valid(...VEHICLE_TYPES).optional().
+        when(Joi.object({type: Joi.string().valid("CAR")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...CAR_MAKERS).required()
+            })
+        }).
+        when(Joi.object({type: Joi.string().valid("BIKE")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...BIKE_MAKERS).required()
+            })
+        }).
+        when(Joi.object({type: Joi.string().valid("SCOOTER")}).unknown(), {
+            then: Joi.object({
+                maker: Joi.string().valid(...SCOOTER_MAKERS).required()
+            })
+        }),
+        status: Joi.string().valid(...VEHICLE_STATUSES).optional(),
+        seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required() }).min(1).max(8),
+        pickupLocation: Joi.object({
+            address: Joi.string().max(1000).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }).required(),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Number should have at least 1 character`,
+                "number.empty": `Number should not be empty`,
+                "number.min": `Number should not be less than -90`,
+                "number.max": `Number should not be more than 90`,
+            }).required(),
+            lon: Joi.number().min(-180).max(180).messages({
+                "number.base": `Address should have at least 1 character`,
+                "number.empty": `Address should not be empty`,
+                "number.min": `Number should not be less than -180`,
+                "number.max": `Number should not be more than 180`,
+            }).required()
+        }).optional().messages({
+            "any.required": `pickupLocation is a required field`
+        }),
+        returnLocations: Joi.object({
+            address: Joi.string().max(1000).messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }).required(),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Number should have at least 1 character`,
+                "number.empty": `Number should not be empty`,
+                "number.min": `Number should not be less than -90`,
+                "number.max": `Number should not be more than 90`,
+            }).required(),
+            lon: Joi.number().min(-180).max(180).messages({
+                "number.base": `Address should have at least 1 character`,
+                "number.empty": `Address should not be empty`,
+                "number.min": `Number should not be less than -180`,
+                "number.max": `Number should not be more than 180`,
+            }).required()
+        }).optional().messages({
+            "any.required": `pickupLocation is a required field`
+        }),
+        unlockTypes: Joi.string().valid(...UNLOCK_TYPES).optional(),
+        price: Joi.object({
+            currency: Joi.string().valid(...CURRENCY_TYPES).optional(),
+            amount: Joi.number().min(1).optional(),
+        }).optional(),
+    })
     return schema.validate(data);
 }
 
@@ -261,5 +426,6 @@ module.exports = {
     lenderPostValidation,
     updateLenderValidation,
     updateRideStatusValidation,
-    postVehicleValidation
+    postVehicleValidation,
+    updateVehicleValidation
 }

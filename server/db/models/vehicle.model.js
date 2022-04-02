@@ -1,7 +1,12 @@
 const mongoose = require('mongoose');
-const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES} = require('../../global');
+const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, SCOOTER_MAKERS, BIKE_MAKERS} = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
+    lenderId: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: COLLECTIONS.USERS
+    },
     title: {
         type: String,
         minLength: 1,
@@ -56,7 +61,7 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    pickupLocations: [{
+    pickupLocations: {
         address: {
             type: String,
             required: true
@@ -73,7 +78,7 @@ const vehicleSchema = mongoose.Schema({
             max: 180,
             required: true
         } 
-    }],
+    },
     returnLocations: [{
         address: {
             type: String,
