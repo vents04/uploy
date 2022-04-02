@@ -6,7 +6,6 @@ const vehicleSchema = mongoose.Schema({
         type: mongoose.Types.ObjectId,
         ref: COLLECTIONS.USERS,
         required: true
-        
     },
     title: {
         type: String,

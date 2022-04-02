@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES } = require('../global');
 const { postVehicleValidation, updateVehicleValidation } = require('../validation/hapi');
 const Vehicle = require('../db/models/vehicle.model');
 const router = express.Router();
@@ -21,6 +21,7 @@ router.post("/", authenticate, async (req, res, next) => {
     }
     try {
         const vehicle = new Vehicle(req.body);
+        vehicle.lenderId = lender._id.toString();
         await DbService.create(COLLECTIONS.VEHICLES, vehicle);
 
         res.sendStatus(HTTP_STATUS_CODES.OK);
@@ -48,7 +49,6 @@ router.put("/", authenticate, async (req, res, next) => {
 })
 
 router.get("/search", async (req, res, next) => {
-    console.log(req.query)
     if (!req.query.lat || !req.query.lon) {
         return next(new ResponseError("Both latitude and longitude must be provided", HTTP_STATUS_CODES.BAD_REQUEST));
     }
@@ -82,7 +82,7 @@ router.get("/search", async (req, res, next) => {
 
                 let distance = c * radius;
 
-                const rides = await DbService.getOne(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
+                const rides = await DbService.getMany(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
                     {status: {"$ne": RIDE_STATUSES.CANCELLED}},
                     {status: {"$ne": RIDE_STATUSES.FINISHED}},
                 ]});
@@ -109,7 +109,7 @@ router.get("/search", async (req, res, next) => {
                 }
             }
         }
-
+        
         for (let i = 0; i < vehiclesForCheck.length; i++) {
             for (let j = 0; j < (vehiclesForCheck.length - i - 1); j++) {
                 if (vehiclesForCheck[j].shortestDistance < vehiclesForCheck[j + 1].shortestDistance) {
@@ -120,10 +120,12 @@ router.get("/search", async (req, res, next) => {
             }
         }
 
+        console.log(vehiclesForCheck)
+
         for (let index = 0; index < vehiclesForCheck.length; index++) {
-            let user = await DbService.getById(COLLECTIONS.USERS, vehiclesForCheck[index].userId.toString());
+            let user = await DbService.getById(COLLECTIONS.USERS, vehiclesForCheck[index].user._id.toString());
             // remove below line when in production
-            if (!user) user = await DbService.getOne(COLLECTIONS.USERS, { _id: vehiclesForCheck[index].userId.toString() });
+            if (!user) user = await DbService.getOne(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(vehiclesForCheck[index].user._id) });
             if (!user) {
                 vehiclesForCheck.splice(index, 1);
                 index--;
@@ -131,6 +133,9 @@ router.get("/search", async (req, res, next) => {
             }
             vehiclesForCheck[index].user = user;
         }
+        
+        console.log(vehiclesForCheck)
+
 
         return res.status(HTTP_STATUS_CODES.OK).send({
             results: vehiclesForCheck
