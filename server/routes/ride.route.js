@@ -118,4 +118,25 @@ router.put('/:id/client-update', authenticate, async(req, res, next) => {
     }
 });
 
+router.put('/endupdate', authenticate, async(req, res, next) => {
+    const { error } = updateRideStatusValidation(req.body);
+    if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.body.rideId);
+        if(!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+        
+        const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
+        if(!vehicle) return next(new ResponseError("THere is no vehicle, associated with this ride", HTTP_STATUS_CODES.NOT_FOUND));
+        
+        if(req.user._id.toString() != vehicle.lenderId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
+
+        DbService.update(COLLECTIONS.RIDES, req.body);
+        
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch(e) {
+        return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
 module.exports = router;
