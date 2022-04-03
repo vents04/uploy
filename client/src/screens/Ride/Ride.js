@@ -16,6 +16,7 @@ export default class Ride extends Component {
         ride: {
             vehicle: {
                 title: "Porsche 911 Turbo S",
+                description: "test description",
                 photos: [{
                     photo: tesla
                 }, {
@@ -49,6 +50,7 @@ export default class Ride extends Component {
                         }
                     </Carousel>
                 </div>
+                <p className="vehicle-description">{this.state.ride.vehicle.description}</p>
             </div>
             <div className="action-button-container">
                 <button className="action-button">Book for {this.state.ride.price.amount}{this.state.ride.price.currency}</button>
