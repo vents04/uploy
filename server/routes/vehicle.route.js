@@ -53,6 +53,7 @@ router.get("/search", async (req, res, next) => {
         return next(new ResponseError("Both latitude and longitude must be provided", HTTP_STATUS_CODES.BAD_REQUEST));
     }
     try {
+        let shouldPush = true;
         let vehiclesForCheck= [];
         const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {})
         for (let vehicle of vehicles) {
@@ -89,8 +90,7 @@ router.get("/search", async (req, res, next) => {
     
                 for(let ride of rides){
                     if(!(req.query.pdt - THIRTY_MINUTES_IN_MILLISECONDS > ride.plannedReturnDt) 
-                    && !(req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)
-                    && distance > 20){
+                    && !(req.query.rdt + THIRTY_MINUTES_IN_MILLISECONDS < ride.plannedPickupDt)){
                         canBeGot = false;
                     }
                 }
@@ -104,8 +104,18 @@ router.get("/search", async (req, res, next) => {
                             shortestDistance = distances[j];
                         }
                     }
-                    Object.assign(vehicle, {distances: distances}, {shortestDistance: shortestDistance});
-                    vehiclesForCheck.push(vehicle);
+                    Object.assign(vehicle, {distances: distances}, {shortestDistance: shortestDistance})
+                    if(shortestDistance < 20){
+                        for (let j = 0; j < vehiclesForCheck.length; j++) {
+                            if (vehiclesForCheck[j]._id.toString() == vehicle._id.toString()) {
+                                shouldPush = false;
+                                break;
+                            }
+                        }
+                        if(shouldPush) vehiclesForCheck.push(vehicle)
+
+                        shouldPush = true;
+                    }
                 }
             }
         }
@@ -121,21 +131,6 @@ router.get("/search", async (req, res, next) => {
         }
 
         console.log(vehiclesForCheck)
-
-        for (let index = 0; index < vehiclesForCheck.length; index++) {
-            let user = await DbService.getById(COLLECTIONS.USERS, vehiclesForCheck[index].user._id.toString());
-            // remove below line when in production
-            if (!user) user = await DbService.getOne(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(vehiclesForCheck[index].user._id) });
-            if (!user) {
-                vehiclesForCheck.splice(index, 1);
-                index--;
-                continue;
-            }
-            vehiclesForCheck[index].user = user;
-        }
-        
-        console.log(vehiclesForCheck)
-
 
         return res.status(HTTP_STATUS_CODES.OK).send({
             results: vehiclesForCheck
