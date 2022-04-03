@@ -89,7 +89,10 @@ router.put('/', authenticate, async (req, res, next) => {
 router.post('/validate-token', async (req, res, next) => {
     const token = req.header("x-auth-token");
     if (!token) {
-        return next(new ResponseError("Token not provided", HTTP_STATUS_CODES.UNAUTHORIZED), req, res, next);
+        res.status(HTTP_STATUS_CODES.OK).send({
+            valid: false,
+            user: null
+        })
     }
     try {
         let valid = true;

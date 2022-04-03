@@ -42,10 +42,15 @@ export default class Ride extends Component {
   }
 
   gotCarFromClient = () => {
-    ApiRequests.put(`ride/${this.state.ride._id}/status`, {}, {
+
+  }
+
+  gotCarFromLender = () => {
+    ApiRequests.put(`ride/${this.state.ride._id}/client-update`, {}, {
         status: "ONGOING"
     }, true).then((response) => {
-
+        alert("Car marked as got");
+        this.getRide(this.state.ride._id);
     }).catch((error) => {
         if (error.response) {
             alert(error.response.data.error);
@@ -55,10 +60,6 @@ export default class Ride extends Component {
             alert("Request setting error");
         }
     })
-  }
-
-  gotCarFromLender = () => {
-
   }
 
   openVehiclePage = () => {

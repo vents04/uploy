@@ -11,6 +11,7 @@ import { IoIosCar, IoIosKey, IoMdArrowBack } from 'react-icons/io';
 import { MdDirectionsBike, MdElectricScooter, MdOutlineAirlineSeatReclineNormal } from 'react-icons/md';
 import { Link, Navigate } from 'react-router-dom';
 import { Sentry } from 'react-activity';
+import Auth from '../../classes/Auth';
 
 export default class Book extends Component {
 
@@ -24,7 +25,8 @@ export default class Book extends Component {
     returnLocation: null,
     showLoading: false,
     calculatedPrice: 0,
-    navigateToProfile: false
+    navigateToProfile: false,
+    isAuthenticated: false
   }
 
   componentDidMount() {
@@ -39,6 +41,22 @@ export default class Book extends Component {
     const returnTime = queryParams.get('rT');
     if(returnTime) this.setState({returnTime: returnTime})
     this.getVehicle(id)
+  }
+  
+  checkAuthentication = () => {
+    const token = Auth.getToken();
+    if(!token) return;
+    ApiRequests.post("user/validate-token", {}, {}, true).then((response) => {
+      this.setState({isAuthenticated: response.data.valid});
+    }).catch((error) => {
+      if (error.response) {
+        alert(error.response.data.error);
+      } else if (error.request) {
+        alert("Response not returned");
+      } else {
+        alert("Request setting error");
+      }
+    })
   }
 
   getVehicle = (id) => {

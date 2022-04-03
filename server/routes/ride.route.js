@@ -67,17 +67,50 @@ router.get('/:id', authenticate, async (req, res, next) => {
     }
 });
 
-router.put('/initialupdate', authenticate, async(req, res, next) => {
+router.get('/', authenticate, async (req, res, next) => {
+    try {
+        const rides = await DbService.getMany(COLLECTIONS.RIDES, {userId: mongoose.Types.ObjectId(req.user._id)});
+        for(let ride of rides) {
+            const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
+            ride.vehicle = vehicle;
+        }
+        const lender = await DbService.getOne(COLLECTIONS.LENDERS, {userId: mongoose.Types.ObjectId(req.user._id)});
+        if(lender) {
+            const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {lenderId: mongoose.Types.ObjectId(lender._id)});
+            for(let vehicle of vehicles) {
+                const vehicleRides = await DbService.getMany(COLLECTIONS.RIDES, {vehicleId: mongoose.Types.ObjectId(vehicle._id)});
+                for(let vehicleRide of vehicleRides) {
+                    vehicleRide.vehicle = vehicle;
+                }
+                rides.push(...vehicleRides);
+                console.log(rides)
+            }
+        }
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            rides
+        });
+    } catch(e) {
+        return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.put('/:id/client-update', authenticate, async(req, res, next) => {
+    if(!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid ride id", HTTP_STATUS_CODES.BAD_REQUEST));
+
     const { error } = updateRideStatusValidation(req.body);
     if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const ride = await DbService.getById(COLLECTIONS.RIDES, req.body.rideId);
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
         if(!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
-        
+        if(req.body.status != RIDE_STATUSES.ONGOING && ride.status != RIDE_STATUSES.AWAITING)
+            return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
         if(req.user._id.toString() != ride.userId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
 
-        DbService.update(COLLECTIONS.RIDES, req.body);
+        DbService.update(COLLECTIONS.RIDES, {_id: mongoose.Types.ObjectId(req.params.id)}, {
+            status: req.body.status,
+            acPickupDt: new Date().getTime()
+        });
         
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch(e) {

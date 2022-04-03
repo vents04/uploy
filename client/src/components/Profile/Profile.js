@@ -13,6 +13,7 @@ export default class Profile extends Component {
     user: null,
     vehicles: [],
     rides: [],
+    navigateToHome: false,
     showError: false,
     error: ""
   }
@@ -75,7 +76,7 @@ export default class Profile extends Component {
   }
 
   render() {
-    if(!this.state.isAuthenticated) {
+    if(!this.state.isAuthenticated || this.state.navigateToHome) {
       return (
         <Navigate to="/" />
       )
@@ -83,7 +84,9 @@ export default class Profile extends Component {
     return (
       <>
       <div className="top-bar">
-            <IoMdClose size={24} className="icon" />
+            <IoMdClose size={24} className="icon" onClick={() => {
+              this.setState({navigateToHome: true})
+            }} />
             <p className="top-bar-text">Profile</p>
       </div>
       {
