@@ -46,9 +46,41 @@ router.put("/", authenticate, async (req, res, next) => {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 
+});
+
+router.get("/:id", async (req, res, next) => {
+    if(!mongoose.Types.ObjectId.isValid(req.params.id)) {
+        return next(new ResponseError("Invalid vehicle id", HTTP_STATUS_CODES.BAD_REQUEST))
+    } 
+    try {
+        const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.params.id);
+        if(!vehicle){
+            return next(new ResponseError("Vehicle not", HTTP_STATUS_CODES.NOT_FOUND));
+        }
+        
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            vehicle: vehicle
+        });
+    } catch (err) {
+        return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
 })
 
-router.get("/search", async (req, res, next) => {
+router.get("/", authenticate, async (req, res, next) => {
+    try {
+        const lender = await DbService.getOne(COLLECTIONS.LENDERS, {userId: mongoose.Types.ObjectId(req.user._id)});
+        if(!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND))
+        const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {lenderId: mongoose.Types.ObjectId(lender._id)});
+        
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            vehicles: vehicles
+        });
+    } catch (err) {
+        return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+})
+
+router.post("/search", async (req, res, next) => {
     if (!req.query.lat || !req.query.lon) {
         return next(new ResponseError("Both latitude and longitude must be provided", HTTP_STATUS_CODES.BAD_REQUEST));
     }
@@ -96,7 +128,8 @@ router.get("/search", async (req, res, next) => {
                 }
                 if(canBeGot){
                     const vehicleOwner = await DbService.getOne(COLLECTIONS.LENDERS, {_id: mongoose.Types.ObjectId(vehicle.lenderId)})
-                    Object.assign(vehicle, {user: vehicleOwner});
+                    const user = await DbService.getById(COLLECTIONS.USERS, vehicleOwner.userId);
+                    Object.assign(vehicle, {user: user});
                     distances.push(distance);
                     let shortestDistance = distances[0];
                     for(let j = 0; j < distances.length; j++){

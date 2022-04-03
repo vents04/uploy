@@ -5,7 +5,7 @@ import './Search.scss';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import { Link } from 'react-router-dom';
 import ApiRequests from '../../classes/ApiRequests';
-import Book from '../../components/Book/Book';
+import Result from '../../components/Result/Result';
 
 export default class Search extends Component {
 
@@ -66,7 +66,7 @@ export default class Search extends Component {
     search = () => {
         const pdt = new Date(this.state.pickupDate + "T" + this.state.pickupTime );
         const rdt = new Date(this.state.returnDate + "T" + this.state.returnTime );
-        ApiRequests.get(`vehicle/search?pdt=${pdt.getTime()}&rdt=${rdt.getTime()}&lat=${this.state.place.lat}&lon=${this.state.place.lon}`).then((response) => {
+        ApiRequests.post(`vehicle/search?pdt=${pdt.getTime()}&rdt=${rdt.getTime()}&lat=${this.state.place.lat}&lon=${this.state.place.lon}`, {}, {}, true).then((response) => {
             this.setState({results: response.data.results})
         }).catch((error) => {
             throw new Error(error)
@@ -123,8 +123,8 @@ export default class Search extends Component {
                     {
                         this.state.results.length > 0
                         ? this.state.results.map((result) =>
-                            <Link to={`/book/${id}?pD=${this.state.pickupDate}&pT=${this.state.pickupTime}&rD=${this.state.returnDate}&rT=${this.state.returnTime}`}>
-                                <Book result={result} />
+                            <Link to={`/book?id=${result._id}&pD=${this.state.pickupDate}&pT=${this.state.pickupTime}&rD=${this.state.returnDate}&rT=${this.state.returnTime}`}>
+                                <Result result={result}  />  
                             </Link>
                         )
                         : <p className="notation">No vehicles found</p>
