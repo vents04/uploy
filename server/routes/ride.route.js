@@ -3,7 +3,7 @@ const Ride = require("../db/models/ride.model");
 const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
 const DbService = require("../services/db.service");
-const { postRideValidation } = require("../validation/hapi");
+const { postRideValidation, updateRideStatusValidation } = require("../validation/hapi");
 const router = express.Router();
 
 router.post('/', authenticate, async(req, res, next) => {
@@ -34,6 +34,24 @@ router.post('/', authenticate, async(req, res, next) => {
         ride.status = RIDE_STATUSES.ONGOING
         await DbService.create(COLLECTIONS.RIDES, ride);        
 
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch(e) {
+        return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.put('/initialupdate', authenticate, async(req, res, next) => {
+    const { error } = updateRideStatusValidation(req.body);
+    if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.body.rideId);
+        if(!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+        
+        if(req.user._id.toString() != ride.userId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
+
+        DbService.update(COLLECTIONS.RIDES, req.body);
+        
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch(e) {
         return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
