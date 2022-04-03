@@ -1,0 +1,40 @@
+@import '../../../assets/styles/global.styles.css';
+
+.result-container {
+    border-radius: 4px;
+    border: 1px solid #e7e7e7;
+    margin: 0.5rem 0rem;
+    cursor: pointer;
+}
+
+.result-image {
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    width: 100%;
+    height: 200px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+.result-content {
+    padding: 1rem;
+}
+
+.result-title {
+    font-family: "Main Black", sans-serif;
+    font-size: 18px;
+}
+
+.result-user {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 0.5rem;
+}
+
+.result-user-names {
+    font-family: "Main Regular", sans-serif;
+    font-size: 14px;
+    margin-left: 0.5rem;
+}

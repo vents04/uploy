@@ -161,7 +161,7 @@ const postRideValidation = (data) => {
         }).required().messages({
             "any.required": `pickupLocation is a required field`
         }),
-        returnLocation: Joi.string().max(100).required().messages({
+        returnLocation: Joi.object({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,
                 "string.empty": `Address should not be empty`,
@@ -179,18 +179,18 @@ const postRideValidation = (data) => {
                 "number.min": `Number should not be less than -180`,
                 "number.max": `Number should not be more than 180`,
             })
-        }).required().messages({
+        }).max(100).required().messages({
             "any.required": `returnLocation is a required field`
         }),
-        plannedPickupDt: Joi.number().required().messages({
-            "number.base": `Password should have at least 1 character`,
-            "number.empty": `Password should not be empty`,
-            "any.required": `Password is a required field`
+        plannedPickupDt: Joi.date().required().messages({
+            "number.base": `Planned pickup date and time should have at least 1 character`,
+            "number.empty": `Planned pickup date and time should not be empty`,
+            "any.required": `Planned pickup date and time is a required field`
         }),
-        plannedReturnDt: Joi.string().required().messages({
-            "number.base": `Password should have at least 1 character`,
-            "number.empty": `Password should not be empty`,
-            "any.required": `Password is a required field`
+        plannedReturnDt: Joi.date().required().messages({
+            "number.base": `Planned return date and time should have at least 1 character`,
+            "number.empty": `Planned return date and time should not be empty`,
+            "any.required": `Planned return date and time is a required field`
         })
 
     })
