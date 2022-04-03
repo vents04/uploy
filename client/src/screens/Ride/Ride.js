@@ -42,7 +42,20 @@ export default class Ride extends Component {
   }
 
   gotCarFromClient = () => {
-
+    ApiRequests.put(`ride/${this.state.ride._id}/lender-update`, {}, {
+        status: "FINISHED"
+    }, true).then((response) => {
+        alert("Car marked as got");
+        this.getRide(this.state.ride._id);
+    }).catch((error) => {
+        if (error.response) {
+            alert(error.response.data.error);
+        } else if (error.request) {
+            alert("Response not returned");
+        } else {
+            alert("Request setting error");
+        }
+    })
   }
 
   gotCarFromLender = () => {

@@ -83,7 +83,6 @@ router.get('/', authenticate, async (req, res, next) => {
                     vehicleRide.vehicle = vehicle;
                 }
                 rides.push(...vehicleRides);
-                console.log(rides)
             }
         }
         return res.status(HTTP_STATUS_CODES.OK).send({
@@ -118,20 +117,30 @@ router.put('/:id/client-update', authenticate, async(req, res, next) => {
     }
 });
 
-router.put('/endupdate', authenticate, async(req, res, next) => {
+router.put('/:id/lender-update', authenticate, async(req, res, next) => {
+    if(!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid ride id", HTTP_STATUS_CODES.BAD_REQUEST));
+
     const { error } = updateRideStatusValidation(req.body);
     if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const ride = await DbService.getById(COLLECTIONS.RIDES, req.body.rideId);
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
         if(!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
         
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
-        if(!vehicle) return next(new ResponseError("THere is no vehicle, associated with this ride", HTTP_STATUS_CODES.NOT_FOUND));
+        if(!vehicle) return next(new ResponseError("There is no vehicle, associated with this ride", HTTP_STATUS_CODES.NOT_FOUND));
         
-        if(req.user._id.toString() != vehicle.lenderId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
+        const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
+        if(!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-        DbService.update(COLLECTIONS.RIDES, req.body);
+        if(req.body.status != RIDE_STATUSES.FINISHED && ride.status != RIDE_STATUSES.ONGOING)
+            return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
+        if(req.user._id.toString() != lender.userId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
+
+        DbService.update(COLLECTIONS.RIDES, {_id: mongoose.Types.ObjectId(req.params.id)}, {
+            status: req.body.status,
+            acReturnDt: new Date().getTime()
+        });
         
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch(e) {
