@@ -5,7 +5,7 @@ import './Search.scss';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import { Link } from 'react-router-dom';
 import ApiRequests from '../../classes/ApiRequests';
-import Result from '../../components/Result/Result';
+import Book from '../../components/Book/Book';
 
 export default class Search extends Component {
 
@@ -123,7 +123,9 @@ export default class Search extends Component {
                     {
                         this.state.results.length > 0
                         ? this.state.results.map((result) =>
-                            <Result result={result} />
+                            <Link to={`/book/${id}?pD=${this.state.pickupDate}&pT=${this.state.pickupTime}&rD=${this.state.returnDate}&rT=${this.state.returnTime}`}>
+                                <Book result={result} />
+                            </Link>
                         )
                         : <p className="notation">No vehicles found</p>
                     }
