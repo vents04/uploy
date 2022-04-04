@@ -4,7 +4,7 @@ const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPE
 const vehicleSchema = mongoose.Schema({
     lenderId: {
         type: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.USERS,
+        ref: DATABASE_MODELS.USER,
         required: true
     },
     title: {
@@ -46,24 +46,27 @@ const vehicleSchema = mongoose.Schema({
     seats: {
         type: Number,
         required: function(){
-            return this.type && VEHICLE_TYPES.CAR
+            return this.type == VEHICLE_TYPES.CAR
         },  
-        minLength: 1,
-        maxLength: 8,
+        min: 2,
+        max: 8
     },
     smartCarKey: {
         type: String,
-        required: true
+        required: function() {
+            return this.unlockTypes.includes(UNLOCK_TYPES.AUTOMATIC)
+        }
     },
     pickupLocations: [{
         address: {
             type: String,
+            minLength: 1,
             required: true
         },
         lat: {
             type: Number,
-            min: -180,
-            max: 180,
+            min: -90,
+            max: 90,
             required: true
         },
         lon: {
@@ -76,12 +79,13 @@ const vehicleSchema = mongoose.Schema({
     returnLocations: [{
         address: {
             type: String,
+            minLength: 1,
             required: true
         },
         lat: {
             type: Number,
-            min: -180,
-            max: 180,
+            min: -90,
+            max: 90,
             required: true
         },
         lon: {
@@ -91,11 +95,13 @@ const vehicleSchema = mongoose.Schema({
             required: true
         } 
     }],
-    unlockTypes: [{
-        type: String,
-        enum: Object.values(UNLOCK_TYPES),
-        required: true
-    }],
+    unlockTypes: {
+        type: [{
+            type: String,
+            enum: Object.values(UNLOCK_TYPES),
+        }],
+        validate: [unlockTypesSizeLimit, "Unlock types array must of 1 or 2 values"]
+    },
     price: {
         currency:{
             type: String,
@@ -109,11 +115,24 @@ const vehicleSchema = mongoose.Schema({
         }
     },
     photos: [{
-        photo:{
+        photo: {
             type: String,
             required: true
+        },
+        visible: {
+            type: Boolean,
+            default: true
+        },
+        createdAt: {
+            type: Number,
+            default: Date.now
         }
     }]
 })
+
+function unlockTypesSizeLimit(value) {
+    return value.length == 1 || value.length == 2;
+}
+
 const Vehicle = mongoose.model(DATABASE_MODELS.VEHICLE, vehicleSchema);
 module.exports = Vehicle;

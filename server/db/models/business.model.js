@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES } = require('../../global');
+const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES, BUSINESS_STATUSES } = require('../../global');
 
 const businessSchema = mongoose.Schema({
     uid: {
@@ -17,12 +17,12 @@ const businessSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: Object.values(RIDE_STATUSES),
-        default: RIDE_STATUSES.PENDING_APROVAL
+        enum: Object.values(PENDING_APPROVAL),
+        default: BUSINESS_STATUSES.PENDING_APPROVAL
     },
     users: [{
         _id: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.USERS,
+        ref: DATABASE_MODELS.USER,
         required: true
     }],
     phone: {
@@ -30,14 +30,12 @@ const businessSchema = mongoose.Schema({
         minLength: 8,
         maxLength: 15,
         required: true,
-        unique: true,
     },
     email: {
         type: String,
         minLength: 3,
         maxLength: 320,
         required: true,
-        unique: true
     }
 });
 

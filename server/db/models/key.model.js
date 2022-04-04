@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { COLLECTIONS, DATABASE_MODELS } = require('../../global');
 
 const keySchema = mongoose.Schema({
     key: {
@@ -7,6 +8,7 @@ const keySchema = mongoose.Schema({
     },
     userId: {
         type: mongoose.Types.ObjectId,
+        ref: DATABASE_MODELS.USER,
         required: true,
     },
     createdDt: {
@@ -15,5 +17,5 @@ const keySchema = mongoose.Schema({
     }
 });
 
-const Key = mongoose.model("Key", keySchema);
+const Key = mongoose.model(DATABASE_MODELS.KEY, keySchema);
 module.exports = Key;

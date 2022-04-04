@@ -4,7 +4,7 @@ const { COLLECTIONS, LENDER_STATUSES, DATABASE_MODELS } = require('../../global'
 const lenderSchema = mongoose.Schema({
     userId: {
         type: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.USERS,
+        ref: DATABASE_MODELS.USER,
         required: true
     },
     createdAt: {

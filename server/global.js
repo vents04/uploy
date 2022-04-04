@@ -5,7 +5,8 @@ const DATABASE_MODELS = {
     LENDER: "Lender",
     PAYMENT: "Payment",
     REVIEW: "Reviews",
-    BUSINESS: "Business"
+    BUSINESS: "Business",
+    KEY: "Key"
 }
 
 const COLLECTIONS = {
@@ -15,7 +16,8 @@ const COLLECTIONS = {
     LENDERS: "lenders",
     PAYMENTS: "payments",
     REVIEWS: "reviews",
-    BUSINESSES: "businesses"
+    BUSINESSES: "businesses",
+    KEYS: "keys"
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";

@@ -10,14 +10,13 @@ const paymentSchema = mongoose.Schema({
         },
         amount: {
             type: Number,
-            min: 1,
             required: true
         }
     },
     status: {
         type: String,
         enum: Object.values(PAYMENT_STATUSES),
-        default: Object.values(PAYMENT_STATUSES.UNPAYED)
+        default: PAYMENT_STATUSES.UNPAID
     }
 });
 
