@@ -1,16 +1,16 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
-const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
-const User = require('../db/models/user.model');
 const router = express.Router();
+const mongoose = require('mongoose');
 
-const { authenticate } = require('../middlewares/authenticate');
-
+const User = require('../db/models/user.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 const AuthenticationService = require('../services/authentication.service');
 const Lender = require('../db/models/lender.model');
+
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
+const { authenticate } = require('../middlewares/authenticate');
+const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
 
 router.post("/signup", async (req, res, next) => {
     const { error } = signupValidation(req.body);
@@ -24,15 +24,9 @@ router.post("/signup", async (req, res, next) => {
         user.password = AuthenticationService.hashPassword(req.body.password);
         await DbService.create(COLLECTIONS.USERS, user);
 
-        const lender = new Lender({
-            userId: user._id,
-            status: LENDER_STATUSES.ACTIVE
-        })
-        await DbService.create(COLLECTIONS.LENDERS, lender);
-
         setTimeout(() => {
             const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });
-            res.status(HTTP_STATUS_CODES.OK).send({
+            return res.status(HTTP_STATUS_CODES.OK).send({
                 token,
             });
         }, 1000);
@@ -54,7 +48,7 @@ router.post("/login", async (req, res, next) => {
 
         setTimeout(() => {
             const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });
-            res.status(HTTP_STATUS_CODES.OK).send({
+            return res.status(HTTP_STATUS_CODES.OK).send({
                 token,
             });
         }, 1000);
@@ -80,7 +74,7 @@ router.put('/', authenticate, async (req, res, next) => {
     
         await DbService.update(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.user._id) }, req.body);
         
-        res.sendStatus(HTTP_STATUS_CODES.OK);
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
@@ -89,7 +83,7 @@ router.put('/', authenticate, async (req, res, next) => {
 router.post('/validate-token', async (req, res, next) => {
     const token = req.header("x-auth-token");
     if (!token) {
-        res.status(HTTP_STATUS_CODES.OK).send({
+        return res.status(HTTP_STATUS_CODES.OK).send({
             valid: false,
             user: null
         })
@@ -107,7 +101,7 @@ router.post('/validate-token', async (req, res, next) => {
             }
         }
 
-        res.status(HTTP_STATUS_CODES.OK).send({
+        return res.status(HTTP_STATUS_CODES.OK).send({
             valid: valid,
             user: user
         })
