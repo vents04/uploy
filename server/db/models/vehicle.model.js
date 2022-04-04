@@ -19,20 +19,6 @@ const vehicleSchema = mongoose.Schema({
         maxLength: 500,
         required: true
     },
-    maker: {
-        type: String,
-        enum: function(){
-            switch(this.type) {
-                case VEHICLE_TYPES.CAR:
-                    return CAR_MAKERS;
-                case VEHICLE_TYPES.SCOOTER:
-                    return SCOOTER_MAKERS;
-                case VEHICLE_TYPES.BIKE:
-                    return BIKE_MAKERS;
-            }
-        },
-        required: true
-    },
     status: {
         type: String,
         enum: Object.values(VEHICLE_STATUSES),
@@ -51,8 +37,9 @@ const vehicleSchema = mongoose.Schema({
         min: 2,
         max: 8
     },
-    smartCarKey: {
+    keyId: {
         type: String,
+        ref: DATABASE_MODELS.KEY,
         required: function() {
             return this.unlockTypes.includes(UNLOCK_TYPES.AUTOMATIC)
         }
