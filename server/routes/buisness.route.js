@@ -1,18 +1,20 @@
 const express = require("express");
-const Business = require("../db/models/buisness.model");
-const { COLLECTIONS, HTTP_STATUS_CODES } = require("../global");
-const { authenticate } = require("../middlewares/authenticate");
-const DbService = require("../services/db.service");
-const { postBusinessValidation, businessUpdateValidation } = require("../validation/hapi");
 const router = express.Router();
 
+const Business = require("../db/models/buisness.model");
+const DbService = require("../services/db.service");
+
+const { COLLECTIONS, HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE } = require("../global");
+const { authenticate } = require("../middlewares/authenticate");
+const { businessPostValidation, businessUpdateValidation } = require("../validation/hapi");
+
 router.post('/', authenticate, async(req, res, next) => {
-    const { error } = postBusinessValidation(req.body);
+    const { error } = businessPostValidation(req.body);
     if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const existingBusiness = await DbService.getOne(COLLECTIONS.BUSINESSES, {uid: req.body.uid});
-        if(existingBusiness) return next(new ResponseError("A business with this id already exists", HTTP_STATUS_CODES.CONFLICT));
+        const existingBusiness = await DbService.getOne(COLLECTIONS.BUSINESSES, { uid: req.body.uid });
+        if (existingBusiness) return next(new ResponseError("Business with this unique identifier already exists", HTTP_STATUS_CODES.CONFLICT));
         
         const business = new Business(req.body);
         await DbService.create(COLLECTIONS.BUSINESSES, business);
@@ -23,25 +25,27 @@ router.post('/', authenticate, async(req, res, next) => {
     }
 });
 
-router.post('/update', authenticate, async(req, res, next) => {
+router.put('/:id', authenticate, async(req, res, next) => {
+    if(!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid business id", HTTP_STATUS_CODES.BAD_REQUEST))
+
     const { error } = businessUpdateValidation(req.body);
     if(error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const business = await DbService.getOne(COLLECTIONS.BUSINESSES, {uid: req.body.uid});
-        if(!business) return next(new ResponseError("The business that you are trying to update does not exist", HTTP_STATUS_CODES.NOT_FOUND));
+        const business = await DbService.getById(COLLECTIONS.BUSINESSES, req.params.id);
+        if(!business) return next(new ResponseError("Business not found by id", HTTP_STATUS_CODES.NOT_FOUND));
 
         let isTheUserPartOfTheBusiness = false;
-        for(let i in business.users){
-            if(business.users[i]._id == req.user._id){
+        for(let user of business.users){
+            if(user.toString() == req.user._id.toString()){
                 isTheUserPartOfTheBusiness = true;
                 break;
             }
         }
 
-        if(!isTheUserPartOfTheBusiness) return next(new ResponseError("You do not have permission to update this business", HTTP_STATUS_CODES.UNAUTHORIZED));
+        if(!isTheUserPartOfTheBusiness) return next(new ResponseError("You do not have permission to update this business", HTTP_STATUS_CODES.FORBIDDEN));
 
-        await DbService.update(COLLECTIONS.BUSINESSES, req.body);
+        await DbService.update(COLLECTIONS.BUSINESSES, { _id: mongoose.Types.ObjectId(req.params.id) }, req.body);
 
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch(e) {

@@ -391,41 +391,43 @@ const updateLenderValidation = (data) => {
     return schema.validate(data);
 }
 
-const postBusinessValidation = (data) => {
+const businessPostValidation = (data) => {
     const schema = Joi.object({
-        uid: Joi.string().max(200).required().messages({
-            "string.base": `Unique identifier should have at least 1 characters`,
+        uid: Joi.string().min(1).max(200).required().messages({
+            "string.base": `Unique identifier should have at least 1 character`,
             "string.empty": `Unique identifier should not be empty`,
+            "string.min": `Unique identifier should have at least 1 character`,
             "string.max": `Unique identifier should have at most 200 characters`,
             "any.required": `Unique identifier is a required field`
         }),
-        name: Joi.string().max(200).required().messages({
-            "string.base": `Name identifier should have at least 1 characters`,
-            "string.empty": `Name identifier should not be empty`,
-            "string.max": `Name identifier should have at most 200 characters`,
-            "any.required": `Name identifier is a required field`
+        name: Joi.string().min(1).max(200).required().messages({
+            "string.base": `Name should have at least 1 characters`,
+            "string.empty": `Name should not be empty`,
+            "string.min": `Name should have at least 1 character`,
+            "string.max": `Name should have at most 200 characters`,
+            "any.required": `Name is a required field`
         }),
-        users: Joi.array().items(Joi.object({
-            _id: Joi.string().custom((value, helper) => {
+        users: Joi.array().items(Joi.string().custom((value, helper) => {
                 if (!mongoose.Types.ObjectId.isValid(value)) {
-                    return helper.message("User id must be a valid ObjectId");
+                    return helper.message("Element from the users array has an invalid user id");
                 }                 
                 return true;
-            }).required()
-        })),
+        })).required(),
         phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `Phone number should have at least 8 characters`,
             "string.empty": `Phone number should not be empty`,
+            "string.min": `Phone number have at least 8 characters`,
+            "string.max": `Name should have at most 15 characters`,
             "any.required": `Phone number is a required field`
         }).custom((phone, helper) => {
             if (phone) {
                 const regionCode = PhoneNumber(phone).getRegionCode();
                 if (!regionCode) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
                 const phoneNumber = PhoneNumber(phone, regionCode);
                 if (!phoneNumber || !phoneNumber.isValid()) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
             }
             return true;
@@ -433,8 +435,8 @@ const postBusinessValidation = (data) => {
         email: Joi.string().email().min(3).max(320).required().messages({
             "string.base": `Email should have at least 3 characters`,
             "string.empty": `Email should not be empty`,
-            "string.min": `Email should have at least 3 characters`,
             "string.email": `Email should be a valid email address`,
+            "string.min": `Email should have at least 3 characters`,
             "string.max": `Email should have at most 320 characters`,
             "any.required": `Email is a required field`
         })
@@ -444,42 +446,46 @@ const postBusinessValidation = (data) => {
 
 const businessUpdateValidation = (data) => {
     const schema = Joi.object({
-        name: Joi.string().max(200).optional().messages({
-            "string.base": `Name identifier should have at least 1 characters`,
-            "string.empty": `Name identifier should not be empty`,
-            "string.max": `Name identifier should have at most 200 characters`,
+        name: Joi.string().min(1).max(200).required().messages({
+            "string.base": `Name should have at least 1 characters`,
+            "string.empty": `Name should not be empty`,
+            "string.min": `Name should have at least 1 character`,
+            "string.max": `Name should have at most 200 characters`,
+            "any.required": `Name is a required field`
         }),
-        users: Joi.array().items({
-            _id: Joi.string().custom((value, helper) => {
+        users: Joi.array().items(Joi.string().custom((value, helper) => {
                 if (!mongoose.Types.ObjectId.isValid(value)) {
-                    return helper.message("User id must be a valid ObjectId");
+                    return helper.message("Element from the users array has an invalid user id");
                 }                 
                 return true;
-            }).optional()
-        }),
-        phone: Joi.string().min(8).max(15).optional().messages({
+        })).required(),
+        phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `Phone number should have at least 8 characters`,
             "string.empty": `Phone number should not be empty`,
+            "string.min": `Phone number have at least 8 characters`,
+            "string.max": `Name should have at most 15 characters`,
+            "any.required": `Phone number is a required field`
         }).custom((phone, helper) => {
             if (phone) {
                 const regionCode = PhoneNumber(phone).getRegionCode();
                 if (!regionCode) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
                 const phoneNumber = PhoneNumber(phone, regionCode);
                 if (!phoneNumber || !phoneNumber.isValid()) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
             }
             return true;
         }),
-        email: Joi.string().email().min(3).max(320).optional().messages({
+        email: Joi.string().email().min(3).max(320).required().messages({
             "string.base": `Email should have at least 3 characters`,
             "string.empty": `Email should not be empty`,
-            "string.min": `Email should have at least 3 characters`,
             "string.email": `Email should be a valid email address`,
+            "string.min": `Email should have at least 3 characters`,
             "string.max": `Email should have at most 320 characters`,
-        })
+            "any.required": `Email is a required field`
+        }),
     })
     return schema.validate(data);
 }
@@ -492,13 +498,13 @@ const reviewValidation = (data) => {
             }
             return true;
         }).required().messages({
-            "string.base": "Please provide an ride id before submitting",
-            "string.empty": "Please provide an ride id before submitting",
-            "any.required": "Please provide an ride id before submitting"
+            "string.base": "Please provide a ride id",
+            "string.empty": "Please provide a ride id",
+            "any.required": "Please provide a ride id"
         }),
-        reviwerId: Joi.string().custom((value, helper) => {
+        reviewerId: Joi.string().custom((value, helper) => {
             if (!mongoose.Types.ObjectId.isValid(value)) {
-                return helper.message("Invalid reviwer id");
+                return helper.message("Invalid reviewer id");
             }
             return true;
         }).required().messages({
@@ -526,7 +532,7 @@ module.exports = {
     updateRideStatusValidation,
     postVehicleValidation,
     updateVehicleValidation,
-    postBusinessValidation,
+    businessPostValidation,
     businessUpdateValidation,
     reviewValidation
 }
