@@ -216,9 +216,9 @@ const lenderPostValidation = (data) => {
             }
             return true;
         }).required().messages({
-            "string.base": "Please provide an user id before submitting",
-            "string.empty": "Please provide an user id before submitting",
-            "any.required": "Please provide an user id before submitting"
+            "string.base": "Please provide an user id",
+            "string.empty": "Please provide an user id",
+            "any.required": "Please provide an user id"
         })
     })
     return schema.validate(data);
@@ -384,7 +384,7 @@ const updateVehicleValidation = (data) => {
     return schema.validate(data);
 }
 
-const updateLenderValidation = (data) => {
+const lenderUpdateValidation = (data) => {
     const schema = Joi.object({
         status: Joi.string().valid(...Object.values(LENDER_STATUSES)).required()
     })
@@ -528,7 +528,7 @@ module.exports = {
     userUpdateValidation,
     postRideValidation,
     lenderPostValidation,
-    updateLenderValidation,
+    lenderUpdateValidation,
     updateRideStatusValidation,
     postVehicleValidation,
     updateVehicleValidation,
