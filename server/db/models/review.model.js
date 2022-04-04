@@ -7,11 +7,6 @@ const reviewSchema = mongoose.Schema({
         ref: DATABASE_MODELS.RIDE,
         required: true
     },
-    vehicleId: {
-        type: mongoose.Types.ObjectId,
-        ref: DATABASE_MODELS.VEHICLE,
-        required: true
-    },
     reviewerId: {
         type: mongoose.Types.ObjectId,
         ref: "reviewerDatabaseModel",

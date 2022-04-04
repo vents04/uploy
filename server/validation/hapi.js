@@ -490,7 +490,7 @@ const businessUpdateValidation = (data) => {
     return schema.validate(data);
 }
 
-const reviewValidation = (data) => {
+const reviewPostValidation = (data) => {
     const schema = Joi.object({
         rideId: Joi.string().custom((value, helper) => {
             if (!mongoose.Types.ObjectId.isValid(value)) {
@@ -502,22 +502,18 @@ const reviewValidation = (data) => {
             "string.empty": "Please provide a ride id",
             "any.required": "Please provide a ride id"
         }),
-        reviewerId: Joi.string().custom((value, helper) => {
-            if (!mongoose.Types.ObjectId.isValid(value)) {
-                return helper.message("Invalid reviewer id");
-            }
-            return true;
-        }).required().messages({
-            "string.base": "Please provide an reviwer id before submitting",
-            "string.empty": "Please provide an reviwer id before submitting",
-            "any.required": "Please provide an reviwer id before submitting"
-        }),
-        rating: Joi.number().min(1).max(5000).messages({
+        rating: Joi.number().integer().min(1).max(5).messages({
             "number.base": `Rating should have at least 1 character`,
             "number.empty": `Rating should not be empty`,
-            "number.min": `Rating should not be less than 1`,
-            "number.max": `Rating should not be more than 5000`,
+            "number.min": `Rating should greater than or equal to 1`,
+            "number.max": `Rating should not be greater than 5`,
         }),
+        review: Joi.string().min(1).max(500).optional().messages({
+            "string.base": `Review should have at least 1 character`,
+            "string.empty": `Review should not be empty`,
+            "string.min": `Review should have at least 1 character`,
+            "string.max": `Review should have at most 500 characters`,
+        })
     })
     return schema.validate(data);
 }
@@ -534,5 +530,5 @@ module.exports = {
     updateVehicleValidation,
     businessPostValidation,
     businessUpdateValidation,
-    reviewValidation
+    reviewPostValidation
 }
