@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const Business = require("../db/models/buisness.model");
+const Business = require("../db/models/business.model");
 const DbService = require("../services/db.service");
 
 const { COLLECTIONS, HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE } = require("../global");

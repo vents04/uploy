@@ -6,7 +6,7 @@ const lenderRoute = require('./lender.route');
 const rideRoute = require('./ride.route');
 const vehicleRoute = require('./vehicle.route');
 const smartcarRoute = require('./smartcar.route');
-const businessRoute = require('./business.route');
+const businessRoute = require('./buisness.route');
 const reviewRoute = require('./review.route');
 
 router.use('/user', userRoute);

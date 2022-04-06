@@ -17,7 +17,7 @@ const businessSchema = mongoose.Schema({
     },
     users: {
         type: [{
-            _id: mongoose.Types.ObjectId,
+            type: mongoose.Types.ObjectId,
             ref: DATABASE_MODELS.USER,
             required: true
         }],
@@ -37,7 +37,7 @@ const businessSchema = mongoose.Schema({
     },
     status: {
         type: String,
-        enum: Object.values(PENDING_APPROVAL),
+        enum: Object.values(BUSINESS_STATUSES.PENDING_APPROVAL),
         default: BUSINESS_STATUSES.PENDING_APPROVAL
     },
     createdDt: {

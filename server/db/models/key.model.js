@@ -1,15 +1,24 @@
 const mongoose = require('mongoose');
-const { COLLECTIONS, DATABASE_MODELS } = require('../../global');
+const { DATABASE_MODELS, KEY_STATUSES } = require('../../global');
 
 const keySchema = mongoose.Schema({
-    key: {
+    vehicleId: {
         type: String,
+        ref: DATABASE_MODELS.VEHICLE,
         required: true,
     },
-    userId: {
-        type: mongoose.Types.ObjectId,
-        ref: DATABASE_MODELS.USER,
-        required: true,
+    smartcarVehicleId: {
+        type: String,
+        default: null
+    },
+    accessToken: {
+        type: String,
+        default: null
+    },
+    status: {
+        type: String,
+        enum: Object.values(KEY_STATUSES),
+        default: KEY_STATUSES.PENDING_AUTH_FLOW
     },
     createdDt: {
         type: Number,

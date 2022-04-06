@@ -1,17 +1,15 @@
 const mongoose = require('mongoose');
-const db = mongoose.connection;
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES } = require('../global');
 const DbService = require('./db.service');
-
-const { STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global.js');
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global');
+
 const StripeService = {
-    getPrice: function (ride) {
+    getPrice: (ride) =>{
         return new Promise(async (resolve, reject) => {
             if(ride.status != RIDE_STATUSES.ONGOING){
                 try {
-                    resolve("Ride has to have been started")
+                    resolve("Ride has to be started")
                 } catch (error) {
                     reject(new ResponseError(error.message, HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
                 }
@@ -25,8 +23,8 @@ const StripeService = {
                 });
 
                 const rideDuration = ride.acReturnDt - ride.acPickupDt;
-                const dayInMiliseconds = 1000*60*60*24;
-                const dayCounter = Math.ceil(rideDuration/dayInMiliseconds);
+                const dayInMilliseconds = 1000*60*60*24;
+                const dayCounter = Math.ceil(rideDuration/dayInMilliseconds);
                 
                 const newPrice = await stripe.prices.create({
                     product: stripeVehicle.id,
@@ -45,7 +43,8 @@ const StripeService = {
             }
         })
     },
-    getCustomer: function(ride) {
+
+    getCustomer: (ride) => {
         return new Promise(async (resolve, reject) => {
             const user = await DbService.getOne(COLLECTIONS.USERS, {_id: ride.userId});
 
@@ -65,7 +64,8 @@ const StripeService = {
             }
         })
     },
-    createInvoice: function(ride) {
+
+    createInvoice: (ride) => {
         return new Promise(async (resolve, reject) => {
             const price = this.getPrice(ride);
             const customer = this.getCustomer(ride);
@@ -88,7 +88,8 @@ const StripeService = {
             }
         })
     },
-    sendInvoice: function(ride) {
+
+    sendInvoice: (ride) => {
         return new Promise(async (resolve, reject) => {
             const invoice = this.createInvoice(ride);
             await stripe.invoices.sendInvoice(invoice.id);

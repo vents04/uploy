@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 
-const Review = require('../db/models/generic/review.model');
+const Review = require('../db/models/review.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
@@ -53,3 +53,5 @@ router.post("/", authenticate, async (req, res, next) => {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
+
+module.exports = router;

@@ -1,17 +1,20 @@
 const smartcar = require('smartcar');
 const { SMARTCAR_ID, SMARTCAR_SECRET } = require('../global');
 
-const SmartCar = {
-    initializeClient: () => {
+const SmartcarService = {
+    generateSmartcarConnectAuthRedirect: (keyId) => {
         const client = new smartcar.AuthClient({
-            clientId: SMARTCAR_ID, // fallback to SMARTCAR_CLIENT_ID ENV variable
-            clientSecret: SMARTCAR_SECRET, // fallback to SMARTCAR_CLIENT_SECRET ENV variable
-            redirectUri: 'http://localhost:6140/smartcar/callback', // fallback to SMARTCAR_REDIRECT_URI ENV variable
-            testMode: false, // launch Smartcar Connect in test mode
+            clientId: SMARTCAR_ID, 
+            clientSecret: SMARTCAR_SECRET, 
+            redirectUri: 'http://localhost:6140/smartcar/auth-callback', 
         });
 
-        console.log(client);
+        const scope = ["required:control_security"];
+        const options = { state: keyId, single_select: true };
+        const auth = client.getAuthUrl(scope, options);
+
+       return auth;
     }
 }
 
-module.exports = SmartCar;
+module.exports = SmartcarService;
