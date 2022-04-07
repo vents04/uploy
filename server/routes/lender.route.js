@@ -14,11 +14,11 @@ router.post("/", authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const existingLender = await DbService.getOne(COLLECTIONS.LENDER, { userId: mongoose.Types.ObjectId(req.user._id) });
+        const existingLender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
         if (existingLender) return next(new ResponseError("Lender for this user has already been created", HTTP_STATUS_CODES.CONFLICT));
 
         const lender = new Lender(req.body);
-        await DbService.create(COLLECTIONS.LENDER, lender);
+        await DbService.create(COLLECTIONS.LENDERS, lender);
 
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
@@ -31,14 +31,14 @@ router.put("/", authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const lender = await DbService.getOne(COLLECTIONS.LENDER, { userId: mongoose.Types.ObjectId(req.user._id) });
+        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
         if (!lender) return next(new ResponseError("Lender does not exists", HTTP_STATUS_CODES.NOT_FOUND));
         if (lender.status == LENDER_STATUSES.BLOCKED || lender.status == LENDER_STATUSES.PENDING_APPROVAL)
             return next(new ResponseError("Cannot perform lender status update when lender status is pending approval or blocked", HTTP_STATUS_CODES.CONFLICT));
         if (req.body.status == LENDER_STATUSES.BLOCKED || req.body.status == LENDER_STATUSES.PENDING_APPROVAL)
             return next(new ResponseError("Cannot perform lender status update with new status pending approval or blocked", HTTP_STATUS_CODES.BAD_REQUEST));
 
-        await DbService.update(COLLECTIONS.LENDER, { userId: mongoose.Types.ObjectId(req.user._id) }, req.body);
+        await DbService.update(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) }, req.body);
     
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {

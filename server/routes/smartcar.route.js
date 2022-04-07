@@ -58,4 +58,9 @@ router.post('/unlock/:key', async (req, res, next) => {
     res.sendStatus(HTTP_STATUS_CODES.OK)
 })
 
+router.post('/lock/:key', async (req, res) => {
+
+  res.sendStatus(HTTP_STATUS_CODES.OK)
+})
+
 module.exports = router;
