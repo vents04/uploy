@@ -12,7 +12,6 @@ const userSchema = mongoose.Schema({
     password: {
         type: String,
         minLength: 1,
-        maxLength: 255,
         required: true,
     },
     firstName: {
@@ -32,7 +31,6 @@ const userSchema = mongoose.Schema({
         minLength: 8,
         maxLength: 15,
         required: true,
-        unique: true,
     },
     profilePicture: {
         type: String,

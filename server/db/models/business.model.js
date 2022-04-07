@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES } = require('../../global');
+const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES, BUSINESS_STATUSES } = require('../../global');
 
 const businessSchema = mongoose.Schema({
     uid: {
@@ -15,31 +15,40 @@ const businessSchema = mongoose.Schema({
         maxLength: 200,
         required: true
     },
-    status: {
-        type: String,
-        enum: Object.values(RIDE_STATUSES),
-        default: RIDE_STATUSES.PENDING_APROVAL
+    users: {
+        type: [{
+            type: mongoose.Types.ObjectId,
+            ref: DATABASE_MODELS.USER,
+            required: true
+        }],
+        validate: [usersArraySize, "Users array must have at least 1 element"]
     },
-    users: [{
-        _id: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.USERS,
-        required: true
-    }],
     phone: {
         type: String,
         minLength: 8,
         maxLength: 15,
         required: true,
-        unique: true,
     },
     email: {
         type: String,
         minLength: 3,
         maxLength: 320,
         required: true,
-        unique: true
+    },
+    status: {
+        type: String,
+        enum: Object.values(BUSINESS_STATUSES.PENDING_APPROVAL),
+        default: BUSINESS_STATUSES.PENDING_APPROVAL
+    },
+    createdDt: {
+        type: Number,
+        default: Date.now
     }
 });
+
+function usersArraySize(value) {
+    return value.length >= 1;
+}
 
 const Business = mongoose.model(DATABASE_MODELS.BUSINESS, businessSchema);
 module.exports = Business;

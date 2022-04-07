@@ -204,6 +204,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 a {
   text-decoration: none;
+  color: black;
 }
 
 .profile-picture-container {

@@ -1,31 +1,32 @@
 const mongoose = require('mongoose');
-const { COLLECTIONS } = require('../../global');
+const { DATABASE_MODELS } = require('../../global');
 
 const reviewSchema = mongoose.Schema({
     rideId: {
         type: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.RIDES,
+        ref: DATABASE_MODELS.RIDE,
         required: true
     },
-    vehicleId: {
+    reviewerId: {
         type: mongoose.Types.ObjectId,
-        ref: COLLECTIONS.VEHICLES,
+        ref: "reviewerDatabaseModel",
         required: true
     },
-    reviwerId: {
-        type: mongoose.Types.ObjectId,
+    reviewerDatabaseModel: {
+        type: String,
+        enum: [DATABASE_MODELS.USER, DATABASE_MODELS.LENDER],
         required: true
     },
     rating: {
         type: Number,
         min: 1,
-        max: 5
+        max: 5,
+        required: true
     },
     review: {
         type: String,
         minLength: 1,
-        maxLength: 5000,
-        required: false
+        maxLength: 500,
     },
 });
 

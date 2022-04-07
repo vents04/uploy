@@ -129,18 +129,127 @@ const userUpdateValidation = data => {
     return schema.validate(data);
 }
 
-const postRideValidation = (data) => {
+const ridePostValidation = (data) => {
     const schema = Joi.object({
-        vehicleId: Joi.string().required().messages({
-            "string.base": `Vehicle id should have at least 1 characters`,
-            "string.empty": `Vehicle id should not be empty`,
-            "any.required": `Vehicle id is a required field`
-        }).custom((vehicleId, helper) => {
+        vehicleId: Joi.string().required().custom((vehicleId, helper) => {
             if(!mongoose.Types.ObjectId.isValid(vehicleId))
                 return helper.message("Invalid vehicle id")
             return true;
+        }).messages({
+            "string.base": `Vehicle id should have at least 1 characters`,
+            "string.empty": `Vehicle id should not be empty`,
+            "any.required": `Vehicle id is a required field`
         }),
         pickupLocation: Joi.object({
+            address: Joi.string().messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+            }),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Latitude should have at least 1 character`,
+                "number.empty": `Latitude should not be empty`,
+                "number.min": `Latitude should not be less than -90`,
+                "number.max": `Latitude should not be more than 90`,
+            }),
+            lon: Joi.number().min(-180).max(180).messages({
+                "number.base": `Longitude should have at least 1 character`,
+                "number.empty": `Longitude should not be empty`,
+                "number.min": `Longitude should not be less than -180`,
+                "number.max": `Longitude should not be more than 180`,
+            })
+        }).required().messages({
+            "any.required": `Pickup locations is a required field`
+        }),
+        returnLocation: Joi.object({
+            address: Joi.string().messages({
+                "string.base": `Address should have at least 1 character`,
+                "string.empty": `Address should not be empty`,
+                "string.max": `Address should have at most 1000 characters`,
+            }),
+            lat: Joi.number().min(-90).max(90).messages({
+                "number.base": `Latitude should have at least 1 character`,
+                "number.empty": `Latitude should not be empty`,
+                "number.min": `Latitude should not be less than -90`,
+                "number.max": `Latitude should not be more than 90`,
+            }),
+            lon: Joi.number().min(-180).max(180).messages({
+                "string.base": `Longitude should have at least 1 character`,
+                "string.empty": `Longitude should not be empty`,
+                "number.min": `Longitude should not be less than -180`,
+                "number.max": `Longitude should not be more than 180`,
+            })
+        }).max(100).required().messages({
+            "any.required": `Return locations is a required field`
+        }),
+        plannedPickupDt: Joi.date().required().messages({
+            "number.base": `Planned pickup date and time should have at least 1 character`,
+            "number.empty": `Planned pickup date and time should not be empty`,
+            "any.required": `Planned pickup date and time is a required field`
+        }),
+        plannedReturnDt: Joi.date().required().messages({
+            "number.base": `Planned return date and time should have at least 1 character`,
+            "number.empty": `Planned return date and time should not be empty`,
+            "any.required": `Planned return date and time is a required field`
+        })
+
+    })
+    return schema.validate(data);
+}
+
+const rideStatusUpdateValidation = (data) => {
+    const schema = Joi.object({
+        status: Joi.string().valid(...Object.values(RIDE_STATUSES)).messages({
+            "string.base": `Status should have at least 1 characters`,
+            "string.empty": `Status should not be empty`,
+            "any.required": `Status is a required field`
+        })
+    })
+    return schema.validate(data);
+}
+
+const lenderPostValidation = (data) => {
+    const schema = Joi.object({
+        userId: Joi.string().custom((value, helper) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Invalid user id");
+            }
+            return true;
+        }).required().messages({
+            "string.base": "Please provide an user id",
+            "string.empty": "Please provide an user id",
+            "any.required": "Please provide an user id"
+        })
+    })
+    return schema.validate(data);
+}
+
+const vehiclePostValidation = (data) => {
+    const schema = Joi.object({
+        title: Joi.string().min(1).max(100).required().messages({
+            "string.base": `Title should have at least 1 character`,
+            "string.empty": `Title should not be empty`,
+            "string.min": `Title should have at least 1 character`,
+            "string.max": `Title should have at most 100 characters`,
+            "any.required": `Title is a required field`
+        }),
+        description: Joi.string().min(1).max(500).required().messages({
+            "string.base": `Description should have at least 1 character`,
+            "string.empty": `Description should not be empty`,
+            "string.min": `Description should have at least 1 character`,
+            "string.max": `Description should have at most 500 characters`,
+            "any.required": `Description is a required field`
+        }),
+        type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).required(),
+        seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required().min(1).max(8) }),
+        keyId: Joi.string().when('unlockTypes', {is: ["AUTOMATIC", "MANUAL"], then: Joi.string().required(), otherwise: Joi.when('unlockTypes', {
+            is: ["AUTOMATIC"], then: Joi.string().required(), otherwise: Joi.string().allow(null).optional()
+        })}).custom((value, helper) => {
+            if(!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Invalid key id");
+            }
+            return true;
+        }),
+        pickupLocations: Joi.array().items({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,
                 "string.empty": `Address should not be empty`,
@@ -161,7 +270,7 @@ const postRideValidation = (data) => {
         }).required().messages({
             "any.required": `pickupLocation is a required field`
         }),
-        returnLocation: Joi.string().max(100).required().messages({
+        returnLocations: Joi.array().items({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,
                 "string.empty": `Address should not be empty`,
@@ -174,57 +283,27 @@ const postRideValidation = (data) => {
                 "number.max": `Number should not be more than 90`,
             }),
             lon: Joi.number().min(-180).max(180).messages({
-                "string.base": `Address should have at least 1 character`,
-                "string.empty": `Address should not be empty`,
+                "number.base": `Address should have at least 1 character`,
+                "number.empty": `Address should not be empty`,
                 "number.min": `Number should not be less than -180`,
                 "number.max": `Number should not be more than 180`,
             })
         }).required().messages({
-            "any.required": `returnLocation is a required field`
+            "any.required": `pickupLocation is a required field`
         }),
-        plannedPickupDt: Joi.number().required().messages({
-            "number.base": `Password should have at least 1 character`,
-            "number.empty": `Password should not be empty`,
-            "any.required": `Password is a required field`
-        }),
-        plannedReturnDt: Joi.string().required().messages({
-            "number.base": `Password should have at least 1 character`,
-            "number.empty": `Password should not be empty`,
-            "any.required": `Password is a required field`
-        })
-
+        unlockTypes: Joi.string().valid(...Object.values(UNLOCK_TYPES)).required(),
+        price: Joi.object({
+            currency: Joi.string().valid(...Object.values(CURRENCY_TYPES)).required(),
+            amount: Joi.number().min(1).required(),
+        }).required(),
+        photos: Joi.array().items(Joi.object({
+            photo: Joi.string().required(),
+        })).min(1).required()
     })
     return schema.validate(data);
 }
 
-const updateRideStatusValidation = (data) => {
-    const schema = Joi.object({
-        status: Joi.string().valid(...Object.values(RIDE_STATUSES)).messages({
-            "string.base": `Status should have at least 1 characters`,
-            "string.empty": `Status should not be empty`,
-            "any.required": `Status is a required field`
-        })
-    })
-    return schema.validate(data);
-}
-
-const lenderPostValidation = (data) => {
-    const schema = Joi.object({
-        userId: Joi.string().custom((value, helper) => {
-            if (!mongoose.Types.ObjectId.isValid(value)) {
-                return helper.message("Invalid user id");
-            }
-            return true;
-        }).required().messages({
-            "string.base": "Please provide an user id before submitting",
-            "string.empty": "Please provide an user id before submitting",
-            "any.required": "Please provide an user id before submitting"
-        })
-    })
-    return schema.validate(data);
-}
-
-const postVehicleValidation = (data) => {
+const vehicleUpdateValidation = (data) => {
     const schema = Joi.object({
         title: Joi.string().min(1).max(100).required().messages({
             "string.base": `Title should have at least 1 character`,
@@ -239,13 +318,6 @@ const postVehicleValidation = (data) => {
             "string.min": `Description should have at least 1 character`,
             "string.max": `Description should have at most 500 characters`,
             "any.required": `Description is a required field`
-        }),
-        model: Joi.string().min(1).max(70).required().messages({
-            "string.base": `Model should have at least 1 character`,
-            "string.empty": `Model should not be empty`,
-            "string.min": `Model should have at least 1 character`,
-            "string.max": `Model should have at most 200 characters`,
-            "any.required": `Model is a required field`
         }),
         type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).required(),
         seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required().min(1).max(8) }),
@@ -304,128 +376,50 @@ const postVehicleValidation = (data) => {
     return schema.validate(data);
 }
 
-const updateVehicleValidation = (data) => {
-    const schema = Joi.object({
-        title: Joi.string().min(1).max(100).optional().messages({
-            "string.base": `Title should have at least 1 character`,
-            "string.empty": `Title should not be empty`,
-            "string.min": `Title should have at least 1 character`,
-            "string.max": `Title should have at most 100 characters`,
-            "any.required": `Title is a required field`
-        }),
-        description: Joi.string().min(1).max(500).optional().messages({
-            "string.base": `Description should have at least 1 character`,
-            "string.empty": `Description should not be empty`,
-            "string.min": `Description should have at least 1 character`,
-            "string.max": `Description should have at most 500 characters`,
-            "any.required": `Description is a required field`
-        }),
-        model: Joi.string().min(1).max(70).optional().messages({
-            "string.base": `Model should have at least 1 character`,
-            "string.empty": `Model should not be empty`,
-            "string.min": `Model should have at least 1 character`,
-            "string.max": `Model should have at most 200 characters`,
-            "any.required": `Model is a required field`
-        }),
-        type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).optional(),
-        status: Joi.string().valid(...Object.values(VEHICLE_STATUSES)).optional(),
-        seats: Joi.number().alternatives().conditional('type', { is: "CAR", then: Joi.number().required() }).min(1).max(8),
-        pickupLocations: Joi.array().items({
-            address: Joi.string().max(1000).messages({
-                "string.base": `Address should have at least 1 character`,
-                "string.empty": `Address should not be empty`,
-                "string.max": `Address should have at most 1000 characters`,
-            }).required(),
-            lat: Joi.number().min(-90).max(90).messages({
-                "number.base": `Number should have at least 1 character`,
-                "number.empty": `Number should not be empty`,
-                "number.min": `Number should not be less than -90`,
-                "number.max": `Number should not be more than 90`,
-            }).required(),
-            lon: Joi.number().min(-180).max(180).messages({
-                "number.base": `Address should have at least 1 character`,
-                "number.empty": `Address should not be empty`,
-                "number.min": `Number should not be less than -180`,
-                "number.max": `Number should not be more than 180`,
-            }).required()
-        }).optional().messages({
-            "any.required": `pickupLocation is a required field`
-        }),
-        returnLocations: Joi.array().items({
-            address: Joi.string().max(1000).messages({
-                "string.base": `Address should have at least 1 character`,
-                "string.empty": `Address should not be empty`,
-                "string.max": `Address should have at most 1000 characters`,
-            }).required(),
-            lat: Joi.number().min(-90).max(90).messages({
-                "number.base": `Number should have at least 1 character`,
-                "number.empty": `Number should not be empty`,
-                "number.min": `Number should not be less than -90`,
-                "number.max": `Number should not be more than 90`,
-            }).required(),
-            lon: Joi.number().min(-180).max(180).messages({
-                "number.base": `Address should have at least 1 character`,
-                "number.empty": `Address should not be empty`,
-                "number.min": `Number should not be less than -180`,
-                "number.max": `Number should not be more than 180`,
-            }).required()
-        }).optional().messages({
-            "any.required": `pickupLocation is a required field`
-        }),
-        unlockTypes: Joi.string().valid(...Object.values(UNLOCK_TYPES)).optional(),
-        price: Joi.object({
-            currency: Joi.string().valid(...Object.values(CURRENCY_TYPES)).optional(),
-            amount: Joi.number().min(1).optional(),
-        }).optional(),
-        pictures: Joi.array().items(Joi.object({
-            file: Joi.string().required()
-        })).optional()
-    })
-    return schema.validate(data);
-}
-
-const updateLenderValidation = (data) => {
+const lenderUpdateValidation = (data) => {
     const schema = Joi.object({
         status: Joi.string().valid(...Object.values(LENDER_STATUSES)).required()
     })
     return schema.validate(data);
 }
 
-const postBusinessValidation = (data) => {
+const businessPostValidation = (data) => {
     const schema = Joi.object({
-        uid: Joi.string().max(200).required().messages({
-            "string.base": `Unique identifier should have at least 1 characters`,
+        uid: Joi.string().min(1).max(200).required().messages({
+            "string.base": `Unique identifier should have at least 1 character`,
             "string.empty": `Unique identifier should not be empty`,
+            "string.min": `Unique identifier should have at least 1 character`,
             "string.max": `Unique identifier should have at most 200 characters`,
             "any.required": `Unique identifier is a required field`
         }),
-        name: Joi.string().max(200).required().messages({
-            "string.base": `Name identifier should have at least 1 characters`,
-            "string.empty": `Name identifier should not be empty`,
-            "string.max": `Name identifier should have at most 200 characters`,
-            "any.required": `Name identifier is a required field`
+        name: Joi.string().min(1).max(200).required().messages({
+            "string.base": `Name should have at least 1 characters`,
+            "string.empty": `Name should not be empty`,
+            "string.min": `Name should have at least 1 character`,
+            "string.max": `Name should have at most 200 characters`,
+            "any.required": `Name is a required field`
         }),
-        users: Joi.array().items(Joi.object({
-            _id: Joi.string().custom((value, helper) => {
+        users: Joi.array().items(Joi.string().custom((value, helper) => {
                 if (!mongoose.Types.ObjectId.isValid(value)) {
-                    return helper.message("User id must be a valid ObjectId");
+                    return helper.message("Element from the users array has an invalid user id");
                 }                 
                 return true;
-            }).required()
-        })),
+        })).required(),
         phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `Phone number should have at least 8 characters`,
             "string.empty": `Phone number should not be empty`,
+            "string.min": `Phone number have at least 8 characters`,
+            "string.max": `Name should have at most 15 characters`,
             "any.required": `Phone number is a required field`
         }).custom((phone, helper) => {
             if (phone) {
                 const regionCode = PhoneNumber(phone).getRegionCode();
                 if (!regionCode) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
                 const phoneNumber = PhoneNumber(phone, regionCode);
                 if (!phoneNumber || !phoneNumber.isValid()) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
             }
             return true;
@@ -433,8 +427,8 @@ const postBusinessValidation = (data) => {
         email: Joi.string().email().min(3).max(320).required().messages({
             "string.base": `Email should have at least 3 characters`,
             "string.empty": `Email should not be empty`,
-            "string.min": `Email should have at least 3 characters`,
             "string.email": `Email should be a valid email address`,
+            "string.min": `Email should have at least 3 characters`,
             "string.max": `Email should have at most 320 characters`,
             "any.required": `Email is a required field`
         })
@@ -444,47 +438,51 @@ const postBusinessValidation = (data) => {
 
 const businessUpdateValidation = (data) => {
     const schema = Joi.object({
-        name: Joi.string().max(200).optional().messages({
-            "string.base": `Name identifier should have at least 1 characters`,
-            "string.empty": `Name identifier should not be empty`,
-            "string.max": `Name identifier should have at most 200 characters`,
+        name: Joi.string().min(1).max(200).required().messages({
+            "string.base": `Name should have at least 1 characters`,
+            "string.empty": `Name should not be empty`,
+            "string.min": `Name should have at least 1 character`,
+            "string.max": `Name should have at most 200 characters`,
+            "any.required": `Name is a required field`
         }),
-        users: Joi.array().items({
-            _id: Joi.string().custom((value, helper) => {
+        users: Joi.array().items(Joi.string().custom((value, helper) => {
                 if (!mongoose.Types.ObjectId.isValid(value)) {
-                    return helper.message("User id must be a valid ObjectId");
+                    return helper.message("Element from the users array has an invalid user id");
                 }                 
                 return true;
-            }).optional()
-        }),
-        phone: Joi.string().min(8).max(15).optional().messages({
+        })).required(),
+        phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `Phone number should have at least 8 characters`,
             "string.empty": `Phone number should not be empty`,
+            "string.min": `Phone number have at least 8 characters`,
+            "string.max": `Name should have at most 15 characters`,
+            "any.required": `Phone number is a required field`
         }).custom((phone, helper) => {
             if (phone) {
                 const regionCode = PhoneNumber(phone).getRegionCode();
                 if (!regionCode) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
                 const phoneNumber = PhoneNumber(phone, regionCode);
                 if (!phoneNumber || !phoneNumber.isValid()) {
-                    return helper.message("The User phone number appears to be invalid");
+                    return helper.message("The phone number appears to be invalid");
                 }
             }
             return true;
         }),
-        email: Joi.string().email().min(3).max(320).optional().messages({
+        email: Joi.string().email().min(3).max(320).required().messages({
             "string.base": `Email should have at least 3 characters`,
             "string.empty": `Email should not be empty`,
-            "string.min": `Email should have at least 3 characters`,
             "string.email": `Email should be a valid email address`,
+            "string.min": `Email should have at least 3 characters`,
             "string.max": `Email should have at most 320 characters`,
-        })
+            "any.required": `Email is a required field`
+        }),
     })
     return schema.validate(data);
 }
 
-const reviewValidation = (data) => {
+const reviewPostValidation = (data) => {
     const schema = Joi.object({
         rideId: Joi.string().custom((value, helper) => {
             if (!mongoose.Types.ObjectId.isValid(value)) {
@@ -492,26 +490,22 @@ const reviewValidation = (data) => {
             }
             return true;
         }).required().messages({
-            "string.base": "Please provide an ride id before submitting",
-            "string.empty": "Please provide an ride id before submitting",
-            "any.required": "Please provide an ride id before submitting"
+            "string.base": "Please provide a ride id",
+            "string.empty": "Please provide a ride id",
+            "any.required": "Please provide a ride id"
         }),
-        reviwerId: Joi.string().custom((value, helper) => {
-            if (!mongoose.Types.ObjectId.isValid(value)) {
-                return helper.message("Invalid reviwer id");
-            }
-            return true;
-        }).required().messages({
-            "string.base": "Please provide an reviwer id before submitting",
-            "string.empty": "Please provide an reviwer id before submitting",
-            "any.required": "Please provide an reviwer id before submitting"
-        }),
-        rating: Joi.number().min(1).max(5000).messages({
+        rating: Joi.number().integer().min(1).max(5).messages({
             "number.base": `Rating should have at least 1 character`,
             "number.empty": `Rating should not be empty`,
-            "number.min": `Rating should not be less than 1`,
-            "number.max": `Rating should not be more than 5000`,
+            "number.min": `Rating should greater than or equal to 1`,
+            "number.max": `Rating should not be greater than 5`,
         }),
+        review: Joi.string().min(1).max(500).optional().messages({
+            "string.base": `Review should have at least 1 character`,
+            "string.empty": `Review should not be empty`,
+            "string.min": `Review should have at least 1 character`,
+            "string.max": `Review should have at most 500 characters`,
+        })
     })
     return schema.validate(data);
 }
@@ -520,13 +514,13 @@ module.exports = {
     signupValidation,
     loginValidation,
     userUpdateValidation,
-    postRideValidation,
+    ridePostValidation,
     lenderPostValidation,
-    updateLenderValidation,
-    updateRideStatusValidation,
-    postVehicleValidation,
-    updateVehicleValidation,
-    postBusinessValidation,
+    lenderUpdateValidation,
+    rideStatusUpdateValidation,
+    vehiclePostValidation,
+    vehicleUpdateValidation,
+    businessPostValidation,
     businessUpdateValidation,
-    reviewValidation
+    reviewPostValidation
 }
