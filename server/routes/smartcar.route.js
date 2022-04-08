@@ -6,16 +6,22 @@ const DbService = require('../services/db.service');
 const SmartcarService = require('../services/smartcar.service');
 const { authenticate } = require('../middlewares/authenticate');
 
-const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES } = require('../global');
+const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES, KEY_ACTIONS } = require('../global');
 const ResponseError = require('../errors/responseError');
 
-async function unlockVehicle(smartcarVehicleId, accessToken) {
+async function performActionOnVehicle(smartcarVehicleId, accessToken, action) {
   const { vehicles } = await SmartcarService.getVehicles(accessToken);
     for(let currentVehicle of vehicles) {
       const vehicleInstance = await SmartcarService.generateVehicleInstance(currentVehicle, accessToken);
       if(vehicleInstance.id.toString() == smartcarVehicleId) {
-        await vehicleInstance.unlock();
-        break;
+        switch(action) {
+          case KEY_ACTIONS.UNLOCK:
+            await vehicleInstance.unlock();
+            break;
+          case KEY_ACTIONS.LOCK: 
+            await vehicleInstance.lock();
+            break;
+        }
       }
     }
 
@@ -96,9 +102,10 @@ router.get('/:keyId/access', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/:keyId/unlock', authenticate, async (req, res, next) => {
+router.post('/:keyId/:action', authenticate, async (req, res, next) => {
   if(!mongoose.Types.ObjectId.isValid(req.params.keyId)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
-
+  if(!Object.values(KEY_ACTIONS).includes(req.params.action)) return next(new ResponseError("Invalid action", HTTP_STATUS_CODES.BAD_REQUEST));
+ 
   try {
     const key = await DbService.getById(COLLECTIONS.KEYS, req.params.keyId);
     if(!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
@@ -111,7 +118,7 @@ router.post('/:keyId/unlock', authenticate, async (req, res, next) => {
     if(!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
     if(lender.userId.toString() == req.user._id.toString()) {
-      await unlockVehicle(key.smartcarVehicleId.toString(), key.smartcarAccessResponse.accessToken);
+      await performActionOnVehicle(key.smartcarVehicleId.toString(), key.smartcarAccessResponse.accessToken, req.params.action);
       return res.sendStatus(HTTP_STATUS_CODES.OK);
     }
 
@@ -126,11 +133,11 @@ router.post('/:keyId/unlock', authenticate, async (req, res, next) => {
 
     if(!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
-    await unlockVehicle(key.smartcarVehicleId.toString(), key.smartcarAccessResponse.accessToken);
+    await performActionOnVehicle(key.smartcarVehicleId.toString(), key.smartcarAccessResponse.accessToken, req.params.action);
     return res.sendStatus(HTTP_STATUS_CODES.OK);
   } catch (err) {
     return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
   }
-})
+});
 
 module.exports = router;
