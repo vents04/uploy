@@ -114,7 +114,13 @@ const vehicleSchema = mongoose.Schema({
             type: Number,
             default: Date.now
         }
-    }]
+    }],
+    vin: {
+        type: String,
+        length: 17,
+        required: true,
+        immutable: true
+    }
 })
 
 function unlockTypesSizeLimit(value) {

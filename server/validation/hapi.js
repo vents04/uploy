@@ -298,7 +298,8 @@ const vehiclePostValidation = (data) => {
         }).required(),
         photos: Joi.array().items(Joi.object({
             photo: Joi.string().required(),
-        })).min(1).required()
+        })).min(1).required(),
+        vin: Joi.string().length(17).required()
     })
     return schema.validate(data);
 }

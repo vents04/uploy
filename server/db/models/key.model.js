@@ -11,14 +11,14 @@ const keySchema = mongoose.Schema({
         type: String,
         default: null
     },
-    accessToken: {
-        type: String,
-        default: null
-    },
     status: {
         type: String,
         enum: Object.values(KEY_STATUSES),
         default: KEY_STATUSES.PENDING_AUTH_FLOW
+    },
+    smartcarAccessResponse: {
+        type: Object,
+        default: {}
     },
     createdDt: {
         type: Number,
