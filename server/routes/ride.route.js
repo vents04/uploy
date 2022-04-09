@@ -21,6 +21,28 @@ router.post('/', authenticate, async (req, res, next) => {
         if (vehicle.status != VEHICLE_STATUSES.ACTIVE) return next(new ResponseError("Vehicle is not reservable", HTTP_STATUS_CODES.FORBIDDEN));
         if (!vehicle.unlockTypes.includes(req.body.unlockType)) return next(new ResponseError("Vehicle does not support this unlock type", HTTP_STATUS_CODES.BAD_REQUEST));
 
+        let pickupLocationMatch = false;
+        for (let pickupLocation of vehicle.pickupLocations) {
+            if (req.body.pickupLocation.address == pickupLocation.address
+                && req.body.pickupLocation.lat == pickupLocation.lat
+                && req.body.pickupLocation.lon == pickupLocation.lon) {
+                pickupLocationMatch = true;
+            }
+        }
+        if (!pickupLocationMatch) return next(new ResponseError("Pickup location does not exist", HTTP_STATUS_CODES.BAD_REQUEST));
+
+        let returnLocationMatch = false;
+        for (let returnLocation of vehicle.returnLocations) {
+            if (req.body.returnLocation.address == returnLocation.address
+                && req.body.returnLocation.lat == returnLocation.lat
+                && req.body.returnLocation.lon == returnLocation.lon) {
+                returnLocationMatch = true;
+            }
+        }
+        if (!returnLocationMatch) return next(new ResponseError("Return location does not exist", HTTP_STATUS_CODES.BAD_REQUEST));
+
+
+
         const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
         if (lender.userId.toString() == req.user._id.toString()) {
             return next(new ResponseError("Cannot rent your own vehicles", HTTP_STATUS_CODES.CONFLICT));
@@ -30,6 +52,10 @@ router.post('/', authenticate, async (req, res, next) => {
             return next(new ResponseError("Return date cannot be before pickup date", HTTP_STATUS_CODES.BAD_REQUEST));
         }
 
+        if (new Date().getTime() + THIRTY_MINUTES_IN_MILLISECONDS >= new Date(req.body.plannedPickupDt).getTime()) {
+            return next(new ResponseError("Pickup date and time must be at least 30 minutes ahead of now", HTTP_STATUS_CODES.BAD_REQUEST));
+        }
+
         const rides = await DbService.getMany(COLLECTIONS.RIDES, {
             vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
                 { status: { "$ne": RIDE_STATUSES.CANCELLED } },
@@ -37,11 +63,14 @@ router.post('/', authenticate, async (req, res, next) => {
             ]
         });
 
+
+        // thirty minutes interval from now on to pickupdt check does not work
         for (let ride of rides) {
-            if (!(new Date(req.body.plannedPickupDt).getTime() - THIRTY_MINUTES_IN_MILLISECONDS > new Date(ride.plannedReturnDt))
-                && !(new Date(req.body.plannedReturnDt).getTime() + THIRTY_MINUTES_IN_MILLISECONDS < new Date(ride.plannedPickupDt))) {
-                return next(new ResponseError("Vehicle is already scheduled for another ride during this period", HTTP_STATUS_CODES.CONFLICT));
-            }
+            if (ride.status != RIDE_STATUSES.CANCELLED && ride.status != RIDE_STATUSES.FINISHED && ride.status != RIDE_STATUSES.CANCELLED_BY_SYSTEM)
+                if (!(new Date(req.body.plannedPickupDt).getTime() - THIRTY_MINUTES_IN_MILLISECONDS > new Date(ride.plannedReturnDt))
+                    && !(new Date(req.body.plannedReturnDt).getTime() + THIRTY_MINUTES_IN_MILLISECONDS < new Date(ride.plannedPickupDt))) {
+                    return next(new ResponseError("Vehicle is already scheduled for another ride during this period", HTTP_STATUS_CODES.CONFLICT));
+                }
         }
 
         const ride = new Ride(req.body);
