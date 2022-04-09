@@ -124,7 +124,7 @@ const userUpdateValidation = data => {
             "string.base": `Customer id should have at least 1 character`,
             "string.empty": `Customer id should not be empty`,
         })
-        
+
     })
     return schema.validate(data);
 }
@@ -132,7 +132,7 @@ const userUpdateValidation = data => {
 const ridePostValidation = (data) => {
     const schema = Joi.object({
         vehicleId: Joi.string().required().custom((vehicleId, helper) => {
-            if(!mongoose.Types.ObjectId.isValid(vehicleId))
+            if (!mongoose.Types.ObjectId.isValid(vehicleId))
                 return helper.message("Invalid vehicle id")
             return true;
         }).messages({
@@ -207,22 +207,6 @@ const rideStatusUpdateValidation = (data) => {
     return schema.validate(data);
 }
 
-const lenderPostValidation = (data) => {
-    const schema = Joi.object({
-        userId: Joi.string().custom((value, helper) => {
-            if (!mongoose.Types.ObjectId.isValid(value)) {
-                return helper.message("Invalid user id");
-            }
-            return true;
-        }).required().messages({
-            "string.base": "Please provide an user id",
-            "string.empty": "Please provide an user id",
-            "any.required": "Please provide an user id"
-        })
-    })
-    return schema.validate(data);
-}
-
 const vehiclePostValidation = (data) => {
     const schema = Joi.object({
         title: Joi.string().min(1).max(100).required().messages({
@@ -241,10 +225,12 @@ const vehiclePostValidation = (data) => {
         }),
         type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).required(),
         seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required().min(1).max(8) }),
-        keyId: Joi.string().when('unlockTypes', {is: ["AUTOMATIC", "MANUAL"], then: Joi.string().required(), otherwise: Joi.when('unlockTypes', {
-            is: ["AUTOMATIC"], then: Joi.string().required(), otherwise: Joi.string().allow(null).optional()
-        })}).custom((value, helper) => {
-            if(!mongoose.Types.ObjectId.isValid(value)) {
+        keyId: Joi.string().when('unlockTypes', {
+            is: ["AUTOMATIC", "MANUAL"], then: Joi.string().required(), otherwise: Joi.when('unlockTypes', {
+                is: ["AUTOMATIC"], then: Joi.string().required(), otherwise: Joi.string().allow(null).optional()
+            })
+        }).custom((value, helper) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
                 return helper.message("Invalid key id");
             }
             return true;
@@ -401,10 +387,10 @@ const businessPostValidation = (data) => {
             "any.required": `Name is a required field`
         }),
         users: Joi.array().items(Joi.string().custom((value, helper) => {
-                if (!mongoose.Types.ObjectId.isValid(value)) {
-                    return helper.message("Element from the users array has an invalid user id");
-                }                 
-                return true;
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Element from the users array has an invalid user id");
+            }
+            return true;
         })).required(),
         phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `Phone number should have at least 8 characters`,
@@ -447,10 +433,10 @@ const businessUpdateValidation = (data) => {
             "any.required": `Name is a required field`
         }),
         users: Joi.array().items(Joi.string().custom((value, helper) => {
-                if (!mongoose.Types.ObjectId.isValid(value)) {
-                    return helper.message("Element from the users array has an invalid user id");
-                }                 
-                return true;
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helper.message("Element from the users array has an invalid user id");
+            }
+            return true;
         })).required(),
         phone: Joi.string().min(8).max(15).required().messages({
             "string.base": `Phone number should have at least 8 characters`,
@@ -516,7 +502,6 @@ module.exports = {
     loginValidation,
     userUpdateValidation,
     ridePostValidation,
-    lenderPostValidation,
     lenderUpdateValidation,
     rideStatusUpdateValidation,
     vehiclePostValidation,

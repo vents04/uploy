@@ -7,7 +7,8 @@ const DATABASE_MODELS = {
     REVIEW: "Reviews",
     BUSINESS: "Business",
     KEY: "Key",
-    VEHICLE_ACTION: "VehicleAction"
+    VEHICLE_ACTION: "VehicleAction",
+    STRIPE_ACCOUNT: "StripeAccount",
 }
 
 const COLLECTIONS = {
@@ -19,7 +20,8 @@ const COLLECTIONS = {
     REVIEWS: "reviews",
     BUSINESSES: "businesses",
     KEYS: "keys",
-    VEHICLE_ACTIONS: "vehicleActions"
+    VEHICLE_ACTIONS: "vehicleActions",
+    STRIPE_ACCOUNTS: "stripeAccounts",
 }
 
 const DB_URI = "mongodb://127.0.0.1:27017/HACKAUBG";
@@ -1193,6 +1195,11 @@ const KEY_ACTIONS = {
 
 const WEEK_IN_MILLISECONDS = 604800000;
 
+const STRIPE_ACCOUNT_STATUSES = {
+    ACTIVE: "ACTIVE",
+    BLOCKED: "BLOCKED",
+}
+
 module.exports = {
     DATABASE_MODELS: DATABASE_MODELS,
     COLLECTIONS: COLLECTIONS,
@@ -1224,5 +1231,6 @@ module.exports = {
     STRIPE_PUBLIC_KEY: STRIPE_PUBLIC_KEY,
     KEY_STATUSES: KEY_STATUSES,
     KEY_ACTIONS: KEY_ACTIONS,
-    WEEK_IN_MILLISECONDS: WEEK_IN_MILLISECONDS
+    WEEK_IN_MILLISECONDS: WEEK_IN_MILLISECONDS,
+    STRIPE_ACCOUNT_STATUSES: STRIPE_ACCOUNT_STATUSES
 }

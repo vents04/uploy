@@ -1,21 +1,35 @@
 const mongoose = require('mongoose');
 const DbService = require('./db.service');
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global');
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global');
-
 const StripeService = {
-    getPrice: (ride) =>{
+
+    createAccount: async (user) => {
+        const account = await stripe.accounts.create({
+            type: 'express',
+            business_type: "individual",
+            individual: {
+                first_name: user.firstName,
+                last_name: user.lastName,
+                email: user.email,
+                phone: user.phone
+            }
+        });
+        return account;
+    },
+
+    getPrice: (ride) => {
         return new Promise(async (resolve, reject) => {
-            if(ride.status != RIDE_STATUSES.ONGOING){
+            if (ride.status != RIDE_STATUSES.ONGOING) {
                 try {
                     resolve("Ride has to be started")
                 } catch (error) {
                     reject(new ResponseError(error.message, HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
                 }
-            }else {
+            } else {
                 ride.status == RIDE_STATUSES.FINISHED;
-                const vehicle = await DbService.getOne(COLLECTIONS.VEHICLES, {_id: ride.vehicleId});
+                const vehicle = await DbService.getOne(COLLECTIONS.VEHICLES, { _id: ride.vehicleId });
                 const stripeVehicle = await stripe.products.create({
                     metadata: {
                         vehicleId: ride.vehicleId
@@ -23,9 +37,9 @@ const StripeService = {
                 });
 
                 const rideDuration = ride.acReturnDt - ride.acPickupDt;
-                const dayInMilliseconds = 1000*60*60*24;
-                const dayCounter = Math.ceil(rideDuration/dayInMilliseconds);
-                
+                const dayInMilliseconds = 1000 * 60 * 60 * 24;
+                const dayCounter = Math.ceil(rideDuration / dayInMilliseconds);
+
                 const newPrice = await stripe.prices.create({
                     product: stripeVehicle.id,
                     unit_amount: dayCounter * vehicle.price.amount,
@@ -34,7 +48,7 @@ const StripeService = {
                 ride.price.amount = newPrice.unit_amount;
                 ride.price.currency = newPrice.currency;
                 ride.acReturnDt = Date.now;
-                await DbService.update(COLLECTIONS.RIDES, {_id: ride._id}, ride);
+                await DbService.update(COLLECTIONS.RIDES, { _id: ride._id }, ride);
                 try {
                     resolve(newPrice)
                 } catch (error) {
@@ -46,15 +60,15 @@ const StripeService = {
 
     getCustomer: (ride) => {
         return new Promise(async (resolve, reject) => {
-            const user = await DbService.getOne(COLLECTIONS.USERS, {_id: ride.userId});
+            const user = await DbService.getOne(COLLECTIONS.USERS, { _id: ride.userId });
 
             const customer = await stripe.customers.create({
                 email: user.email
             });
 
-            if(!user.customerId){
+            if (!user.customerId) {
                 user.customerId = customer.id
-                await DbService.update(COLLECTIONS.USERS, {_id: user._id}, user);
+                await DbService.update(COLLECTIONS.USERS, { _id: user._id }, user);
             }
 
             try {
@@ -102,5 +116,5 @@ const StripeService = {
     }
 }
 
-module.exports = StripeService();
+module.exports = StripeService;
 
