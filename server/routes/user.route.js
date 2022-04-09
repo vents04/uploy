@@ -8,7 +8,7 @@ const DbService = require('../services/db.service');
 const AuthenticationService = require('../services/authentication.service');
 const Lender = require('../db/models/lender.model');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
 
@@ -69,11 +69,11 @@ router.put('/', authenticate, async (req, res, next) => {
             ]
         });
 
-        if (availableUser && availableUser._id.toString() != req.user._id.toString()) 
+        if (availableUser && availableUser._id.toString() != req.user._id.toString())
             return next(new ResponseError("User with this email or phone number already exists. Unable to update your profile", HTTP_STATUS_CODES.BAD_REQUEST));
-    
+
         await DbService.update(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.user._id) }, req.body);
-        
+
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));

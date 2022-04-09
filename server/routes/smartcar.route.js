@@ -8,7 +8,6 @@ const { authenticate } = require('../middlewares/authenticate');
 
 const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES, KEY_ACTIONS, UNLOCK_TYPES } = require('../global');
 const ResponseError = require('../errors/responseError');
-const VehicleAction = require('../db/models/vehicleAction.model');
 const KeyService = require('../services/key.service');
 
 router.get('/auth-redirect/:keyId', authenticate, async (req, res, next) => {

@@ -8,6 +8,7 @@ const indexRoute = require('./routes/index.route');
 const errorHandler = require('./errors/errorHandler');
 
 const { PORT } = require('./global');
+const KeyService = require('./services/key.service');
 
 app
     .use(cors())
@@ -18,7 +19,7 @@ app
     .use("/", indexRoute)
     .use(errorHandler)
     .disable("x-powered-by");
-    
+
 
 mongo.connect();
 
@@ -28,4 +29,13 @@ io.on("connection", (socket) => {
 
 httpServer.listen(PORT, function () {
     console.log("Server listening on port " + PORT)
-})
+});
+
+(async () => {
+    try {
+        await KeyService.refreshAllAccess();
+        await KeyService.runCronTaskForRefreshingAccess();
+    } catch (err) {
+        throw new Error(err);
+    }
+})();
