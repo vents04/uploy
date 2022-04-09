@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const DbService = require('./db.service');
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY } = require('../global');
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY, ACCOUNT_LINK_TYPES, NODE_ENVIRONMENTS, NODE_ENVIRONMENT } = require('../global');
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
 const StripeService = {
@@ -17,6 +17,20 @@ const StripeService = {
             }
         });
         return account;
+    },
+
+    createAccountLink: async (stripeAccountId, accountLinkType) => {
+        const accountLink = await stripe.accountLinks.create({
+            account: stripeAccountId,
+            refresh_url: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT
+                ? 'http://localhost:6140/stripe/onboarding/unsuccessful'
+                : 'https://api.rentngo.online/stripe/onboarding/unsuccessful',
+            return_url: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT
+                ? 'http://localhost:6140/stripe/onboarding/successful'
+                : 'https://api.rentngo.online/stripe/onboarding/successful',
+            type: accountLinkType,
+        });
+        return accountLink;
     },
 
     getPrice: (ride) => {
