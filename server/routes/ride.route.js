@@ -18,6 +18,7 @@ router.post('/', authenticate, async(req, res, next) => {
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.body.vehicleId);
         if(!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
         if(vehicle.status != VEHICLE_STATUSES.ACTIVE) return next(new ResponseError("Vehicle is not reservable", HTTP_STATUS_CODES.FORBIDDEN)); 
+        if(!vehicle.unlockTypes.includes(req.body.unlockType)) return next(new ResponseError("Vehicle does not support this unlock type", HTTP_STATUS_CODES.BAD_REQUEST));
 
         const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
         if(lender.userId.toString() == req.user._id.toString()) {
@@ -51,7 +52,7 @@ router.post('/', authenticate, async(req, res, next) => {
             amount: calculatedPrice,
             currency: vehicle.price.currency
         }
-
+        
         await DbService.create(COLLECTIONS.RIDES, ride);        
 
         return res.sendStatus(HTTP_STATUS_CODES.OK);

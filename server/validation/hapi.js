@@ -190,8 +190,8 @@ const ridePostValidation = (data) => {
             "number.base": `Planned return date and time should have at least 1 character`,
             "number.empty": `Planned return date and time should not be empty`,
             "any.required": `Planned return date and time is a required field`
-        })
-
+        }),
+        unlockType: Joi.string().valid(...Object.values(UNLOCK_TYPES)).required()
     })
     return schema.validate(data);
 }
