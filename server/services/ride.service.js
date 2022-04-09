@@ -26,10 +26,8 @@ const RideService = {
             RideService.cancelRide(rideId);
             clearTimeout(pendingApprovalRidesTimeouts[pendingApprovalRidesTimeouts.length - 1])
             pendingApprovalRidesTimeouts.splice(pendingApprovalRidesTimeouts.length - 1, 1);
-            console.log("removed ride with id " + rideId);
         }, (new Date(plannedPickupDt).getTime() - new Date().getTime()) / 2);
         pendingApprovalRidesTimeouts.push(rideTimeout);
-        console.log("added ride with id " + rideId);
         return true;
     }
 }
