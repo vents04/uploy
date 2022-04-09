@@ -17,13 +17,15 @@ router.post("/", authenticate, async (req, res, next) => {
         const existingLender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
         if (existingLender) return next(new ResponseError("Lender for this user has already been created", HTTP_STATUS_CODES.CONFLICT));
 
-        const lender = new Lender(req.body);
+        const lender = new Lender({
+            userId: req.user._id,
+        });
         await DbService.create(COLLECTIONS.LENDERS, lender);
 
         const account = await StripeService.createAccount(req.user);
         const stripeAccount = new StripeAccount({
             stripeAccountId: account.id,
-            userId: req.user._id
+            lenderId: lender._id
         });
         await DbService.create(COLLECTIONS.STRIPE_ACCOUNTS, stripeAccount);
 

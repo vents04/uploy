@@ -6,7 +6,7 @@ const stripeAccountSchema = mongoose.Schema({
         type: String,
         required: true
     },
-    userId: {
+    lenderId: {
         type: mongoose.Types.ObjectId,
         ref: DATABASE_MODELS.USER,
         required: true
