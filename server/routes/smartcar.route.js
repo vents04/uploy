@@ -122,38 +122,27 @@ router.post('/:keyId/:action', authenticate, async (req, res, next) => {
   if(!Object.values(KEY_ACTIONS).includes(req.params.action)) return next(new ResponseError("Invalid action", HTTP_STATUS_CODES.BAD_REQUEST));
  
   try {
-    console.log("1")
     const key = await DbService.getById(COLLECTIONS.KEYS, req.params.keyId);
     if(!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
     if(key.status != KEY_STATUSES.ACTIVE) return next(new ResponseError("Digital vehicle key is not active", HTTP_STATUS_CODES.CONFLICT));
-    console.log("2")
     
     const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
     if(!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
-    console.log("3")
 
     const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
     if(!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
-    console.log("4")
 
     if(lender.userId.toString() == req.user._id.toString()) {
-      console.log("5")
       const access = await generateAccess(key.smartcarAccessResponse.refreshToken, req.params.keyId);
       await performActionOnVehicle(key.smartcarVehicleId.toString(), access.accessToken, req.params.action);
-      console.log("6")
-
       await saveActionPerformed(vehicle._id, req.user._id, req.params.action);
-    console.log("7")
-    
       return res.sendStatus(HTTP_STATUS_CODES.OK);
     }
 
     let canUnlock = false;
     const rides = await DbService.getMany(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
-    console.log("8")
     for(let ride of rides) {
       if(ride.userId.toString() == req.user._id.toString()) {
-    console.log("9")
         if(ride.unlockType != UNLOCK_TYPES.AUTOMATIC)  return next(new ResponseError("Unlocking vehicle with digital key for this ride is not allowed", HTTP_STATUS_CODES.CONFLICT));
         canUnlock = true;
         break;
@@ -161,14 +150,10 @@ router.post('/:keyId/:action', authenticate, async (req, res, next) => {
     }
 
     if(!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
-
-    console.log("10")
     
     const access = await generateAccess(key.smartcarAccessResponse.refreshToken, req.params.keyId);
     await performActionOnVehicle(key.smartcarVehicleId.toString(), access.accessToken, req.params.action);
-    console.log("11")
     await saveActionPerformed(vehicle._id, req.user._id, req.params.action);
-    console.log("12")
     return res.sendStatus(HTTP_STATUS_CODES.OK);
   } catch (err) {
     return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
