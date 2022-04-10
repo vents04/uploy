@@ -6,7 +6,7 @@ const Lender = require('../db/models/lender.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_ACCOUNT_LINK_TYPES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_ACCOUNT_LINK_TYPES, ONBOARDING_CALLBACK_STATUSES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { lenderUpdateValidation } = require('../validation/hapi');
 const StripeService = require('../services/stripe.service');
@@ -58,7 +58,7 @@ router.put("/:id", authenticate, async (req, res, next) => {
     }
 });
 
-router.post("/stripe-account-link/:accountLinkType", authenticate, async (req, res, next) => {
+router.post("/stripe/account-link/:accountLinkType", authenticate, async (req, res, next) => {
     if (!Object.values(STRIPE_ACCOUNT_LINK_TYPES).includes(req.params.accountLinkType)) return next(new ResponseError("Invalid stripe account link type", HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
@@ -68,16 +68,6 @@ router.post("/stripe-account-link/:accountLinkType", authenticate, async (req, r
         const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
         if (!stripeAccount) return next(new ResponseError("Stripe account not found", HTTP_STATUS_CODES.NOT_FOUND));
         if (stripeAccount.status == STRIPE_ACCOUNT_STATUSES.BLOCKED) return next(new ResponseError("You cannot create a stripe account onboarding link because we have blocked your stirpe account", HTTP_STATUS_CODES.CONFLICT));
-
-        const stripeAccountLinks = await DbService.getMany(COLLECTIONS.STRIPE_ACCOUNT_LINKS, { lenderId: mongoose.Types.ObjectId(lender._id) });
-        for (let stripeAccountLink of stripeAccountLinks) {
-            if (stripeAccountLink.stripeAccountLinkType == req.params.accountLinkType
-                && new Date(stripeAccountLink.stripeAccountLink.expires_at).getTime() * 1000 > new Date().getTime()) {
-                return res.status(HTTP_STATUS_CODES.OK).send({
-                    stripeAccountLink: stripeAccountLink
-                })
-            }
-        }
 
         const accountLink = await StripeService.createAccountLink(stripeAccount.stripeAccountId, STRIPE_ACCOUNT_LINK_TYPES.ONBOARDING);
         const stripeAccountLink = new StripeAccountLink({
@@ -96,6 +86,36 @@ router.post("/stripe-account-link/:accountLinkType", authenticate, async (req, r
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
+});
+
+router.get("/stripe/account", authenticate, async (req, res, next) => {
+    try {
+        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+        if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
+        if (!stripeAccount) return next(new ResponseError("Stripe account not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        // check the value of the details_submitted property to know if the lender has completed the onboarding process
+        const stripeAccountInstance = await StripeService.retrieveAccount(stripeAccount.stripeAccountId);
+
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            stripeAccount: stripeAccount,
+            stripeAccountInstance: stripeAccountInstance
+        })
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.get('/stripe/onboarding/:state', async (req, res, next) => {
+    if (!Object.values(ONBOARDING_CALLBACK_STATUSES).includes(req.params.state)) return next(new ResponseError("Invalid onboarding state", HTTP_STATUS_CODES.BAD_REQUEST));
+
+    return res.status(HTTP_STATUS_CODES.OK).send(
+        req.params.state == ONBOARDING_CALLBACK_STATUSES.SUCCESSFUL
+            ? "Successfully created your stripe account. You may now get paid for your services"
+            : "Unsuccessfully created your stripe account"
+    )
 });
 
 module.exports = router;

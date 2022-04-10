@@ -19,6 +19,11 @@ const StripeService = {
         return account;
     },
 
+    retrieveAccount: async (accountId) => {
+        const account = await stripe.accounts.retrieve(accountId);
+        return account;
+    },
+
     createAccountLink: async (stripeAccountId, accountLinkType) => {
         const accountLink = await stripe.accountLinks.create({
             account: stripeAccountId,
