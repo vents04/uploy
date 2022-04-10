@@ -62,6 +62,17 @@ const RideService = {
         awaitingPaymentRidesTimeouts.push(rideTimeout);
         return true;
     },
+
+    refundPayment: async (rideId) => {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, rideId);
+        if (ride) {
+            const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(rideId) });
+            if (stripePaymentIntent) {
+                await StripeService.refundPaymentIntent(stripePaymentIntent.stripePaymentIntentId);
+            }
+        }
+        return true;
+    }
 }
 
 module.exports = RideService;

@@ -73,6 +73,13 @@ const StripeService = {
         return paymentIntent;
     },
 
+    refundPaymentIntent: async (stripePaymentIntentId) => {
+        const refund = await stripe.refunds.create({
+            payment_intent: stripePaymentIntentId,
+        });
+        return refund;
+    },
+
     constructEvent: async (body, signature) => {
         let event = await stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SIGNING_SECRET);
         return event;
