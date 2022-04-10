@@ -265,7 +265,7 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
                 if (stripePaymentIntent) {
                     const ride = await DbService.getById(COLLECTIONS.RIDES, stripePaymentIntent.rideId)
                     await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(stripePaymentIntent.rideId) }, { status: RIDE_STATUSES.PENDING_APPROVAL });
-                    await RideService.addRideToPendingApprovalTimeouts(ride._id, ride.createdDt)
+                    await RideService.addRideToPendingApprovalTimeouts(ride._id, ride.plannedPickupDt, ride.createdDt)
                 }
                 break;
         }

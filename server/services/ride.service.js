@@ -14,7 +14,7 @@ const RideService = {
                 await RideService.cancelRide(ride._id);
                 continue;
             }
-            RideService.addRideToPendingApprovalTimeouts(ride._id, ride.plannedPickupDt);
+            RideService.addRideToPendingApprovalTimeouts(ride._id, ride.plannedPickupDt, ride.createdDt);
         }
     },
 
@@ -23,12 +23,12 @@ const RideService = {
         return true;
     },
 
-    addRideToPendingApprovalTimeouts: async (rideId, plannedPickupDt) => {
+    addRideToPendingApprovalTimeouts: async (rideId, plannedPickupDt, createdDt) => {
         const rideTimeout = setTimeout(function () {
             RideService.cancelRide(rideId);
             clearTimeout(pendingApprovalRidesTimeouts[pendingApprovalRidesTimeouts.length - 1])
             pendingApprovalRidesTimeouts.splice(pendingApprovalRidesTimeouts.length - 1, 1);
-        }, (new Date(plannedPickupDt).getTime() - new Date().getTime()) / 2);
+        }, ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime()) / 2) - new Date().getTime()));
         pendingApprovalRidesTimeouts.push(rideTimeout);
         return true;
     },
