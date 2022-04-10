@@ -37,6 +37,7 @@ httpServer.listen(PORT, function () {
         await KeyService.refreshAllAccess();
         await KeyService.runCronTaskForRefreshingAccess();
         await RideService.setupCancellationForPendingApprovalRides();
+        await RideService.setupCancellationForAwaitingPaymentRides();
     } catch (err) {
         throw new Error(err);
     }

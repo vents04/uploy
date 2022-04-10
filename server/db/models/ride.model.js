@@ -8,7 +8,7 @@ const rideSchema = mongoose.Schema({
         required: true
     },
     price: {
-        currency:{
+        currency: {
             type: String,
             enum: Object.values(CURRENCY_TYPES),
             required: true
@@ -88,6 +88,10 @@ const rideSchema = mongoose.Schema({
         type: Number,
         default: null
     },
+    createdDt: {
+        type: Number,
+        default: Date.now
+    }
 });
 
 const Ride = mongoose.model(DATABASE_MODELS.RIDE, rideSchema);

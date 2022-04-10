@@ -4,7 +4,6 @@ const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
 const StripeService = {
-
     createAccount: async (user) => {
         const account = await stripe.accounts.create({
             type: 'express',
@@ -54,17 +53,25 @@ const StripeService = {
 
     createPaymentIntent: async (amount, currency, stripeAccountId, stripeCustomerId) => {
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount,
+            amount: amount < 100 ? 100 : amount,
             currency: currency.toLowerCase(),
             customer: stripeCustomerId,
-            automatic_payment_methods: {
-                enabled: true,
-            },
-            application_fee_amount: amount * 0.15,
+            payment_method_types: ["card"],
+            application_fee_amount: parseInt(amount * 0.15),
             transfer_data: {
                 destination: stripeAccountId,
             },
         });
+        return paymentIntent;
+    },
+
+    retrievePaymentIntent: async (stripePaymentIntentId) => {
+        const paymentIntent = await stripe.paymentIntents.retrieve(stripePaymentIntentId);
+        return paymentIntent;
+    },
+
+    cancelPaymentIntent: async (stripePaymentIntentId) => {
+        const paymentIntent = await stripe.paymentIntents.cancel(stripePaymentIntentId);
         return paymentIntent;
     },
 

@@ -6,10 +6,12 @@ const Ride = require("../db/models/ride.model");
 const ResponseError = require("../errors/responseError");
 const DbService = require("../services/db.service");
 
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES } = require("../global");
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
 const { ridePostValidation, rideStatusUpdateValidation } = require("../validation/hapi");
 const RideService = require("../services/ride.service");
+const StripeService = require("../services/stripe.service");
+const StripePaymentIntent = require("../db/models/stripePaymentIntent.model");
 
 router.post('/', authenticate, async (req, res, next) => {
     const { error } = ridePostValidation(req.body);
@@ -75,7 +77,7 @@ router.post('/', authenticate, async (req, res, next) => {
 
         const ride = new Ride(req.body);
         ride.userId = req.user._id.toString();
-        ride.status = RIDE_STATUSES.PENDING_APPROVAL;
+        ride.status = RIDE_STATUSES.AWAITING_PAYMENT;
         ride.plannedPickupDt = new Date(req.body.plannedPickupDt).getTime();
         ride.plannedReturnDt = new Date(req.body.plannedReturnDt).getTime();
 
@@ -88,9 +90,53 @@ router.post('/', authenticate, async (req, res, next) => {
         await DbService.create(COLLECTIONS.RIDES, ride);
         RideService.addRideToPendingApprovalTimeouts(ride._id, ride.plannedPickupDt);
 
-        return res.sendStatus(HTTP_STATUS_CODES.OK);
+        const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
+        const stripeCustomer = await DbService.getOne(COLLECTIONS.STRIPE_CUSTOMERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+        if (!stripeAccount) {
+            // cancel trip
+            return next(new ResponseError("Cannot create checkout for this ride because we could not find the lender's Stripe account or his stripe account is blocked", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+        }
+        if (!stripeCustomer) {
+            // cancel trip
+            return next(new ResponseError("Cannot create checkout for this ride because we could not find your Stripe customer instance", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+        }
+
+        const paymentIntent = await StripeService.createPaymentIntent(ride.price.amount * 100, ride.price.currency, stripeAccount.stripeAccountId, stripeCustomer.stripeCustomerId)
+        const stripePaymentIntent = new StripePaymentIntent({
+            stripePaymentIntentId: paymentIntent.id,
+            rideId: ride._id
+        });
+        await DbService.create(COLLECTIONS.STRIPE_PAYMENT_INTENTS, stripePaymentIntent);
+
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            paymentIntentClientSecret: paymentIntent.client_secret
+        });
     } catch (e) {
+        // cancel ride if exists
         return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.get('/:id/payment-intent', authenticate, async (req, res, next) => {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid ride id", HTTP_STATUS_CODES.BAD_REQUEST))
+
+    try {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
+        if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+        if (ride.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot get the payment intent for this ride", HTTP_STATUS_CODES.FORBIDDEN));
+
+        const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(req.params.id) });
+        if (!stripePaymentIntent) return next(new ResponseError("Payment intent not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        // check the status to determine whether it has been paid
+        const stripePaymentIntentInstance = await StripeService.retrievePaymentIntent(stripePaymentIntent.stripePaymentIntentId);
+
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            stripePaymentIntent: stripePaymentIntent,
+            stripePaymentIntentInstance: stripePaymentIntentInstance
+        })
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
     }
 });
 
