@@ -40,20 +40,20 @@ router.get('/auth-callback', async (req, res, next) => {
     return next(new ResponseError("Error in auth flow", HTTP_STATUS_CODES.BAD_REQUEST));
   }
 
-  try {
-    const code = req.query.code;
-    const keyId = req.query.state;
+  let finalVehicle = null;
+  const code = req.query.code;
+  const keyId = req.query.state;
 
+  try {
     const key = await DbService.getById(COLLECTIONS.KEYS, keyId);
-    if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
-    if (key.status != KEY_STATUSES.PENDING_AUTH_FLOW) return next(new ResponseError("Cannot add a digital key if key status is not pending auth flow", HTTP_STATUS_CODES.CONFLICT));
+    if (!key) throw new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND);
+    if (key.status != KEY_STATUSES.PENDING_AUTH_FLOW) throw new ResponseError("Cannot add a digital key if key status is not pending auth flow", HTTP_STATUS_CODES.CONFLICT);
 
     const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
-    if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
+    if (!vehicle) throw new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND)
 
     const authResponse = await SmartcarService.generateAccessTokenByAuthCode(code);
     const { vehicles } = await SmartcarService.getVehicles(authResponse.accessToken);
-    let finalVehicle = null;
     for (let smartcarVehicle of vehicles) {
       const smartcarVehicleInstance = await SmartcarService.generateVehicleInstance(smartcarVehicle, authResponse.accessToken);
       if ((await smartcarVehicleInstance.vin()).vin == vehicle.vin) {
@@ -62,19 +62,23 @@ router.get('/auth-callback', async (req, res, next) => {
       }
     }
 
-    if (!finalVehicle) {
-      return res.status(HTTP_STATUS_CODES.OK).send({
-        error: "We could not get access to your vehicle",
-        status: HTTP_STATUS_CODES.BAD_REQUEST,
-        dt: new Date().getTime()
-      })
-    }
+    if (!finalVehicle) throw new ResponseError("We could not get access to your vehicle", HTTP_STATUS_CODES.BAD_REQUEST);
+
+    await finalVehicle.unlock();
+    await finalVehicle.lock();
 
     await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(keyId) }, { smartcarAccessResponse: authResponse, status: KEY_STATUSES.ACTIVE, smartcarVehicleId: finalVehicle.id });
 
     return res.sendStatus(HTTP_STATUS_CODES.OK);
   } catch (err) {
-    return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+    if (finalVehicle) {
+      await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(keyId) }, { smartcarAccessResponse: {}, status: KEY_STATUSES.PENDING_AUTH_FLOW, smartcarVehicleId: null });
+    }
+    return res.status(HTTP_STATUS_CODES.OK).send({
+      error: err.message || DEFAULT_ERROR_MESSAGE,
+      status: err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR,
+      dt: new Date().getTime()
+    })
   }
 });
 
