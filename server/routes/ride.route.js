@@ -58,6 +58,10 @@ router.post('/', authenticate, async (req, res, next) => {
             return next(new ResponseError("Pickup date and time must be at least 30 minutes ahead of now", HTTP_STATUS_CODES.BAD_REQUEST));
         }
 
+        if (new Date(req.body.plannedPickupDt).getTime() + THIRTY_MINUTES_IN_MILLISECONDS > new Date(req.body.plannedReturnDt).getTime()) {
+            return next(new ResponseError("Minimum rental period is 30 minutes", HTTP_STATUS_CODES.BAD_REQUEST));
+        }
+
         const rides = await DbService.getMany(COLLECTIONS.RIDES, {
             vehicleId: mongoose.Types.ObjectId(req.body.vehicleId), "$and": [
                 { status: { "$ne": RIDE_STATUSES.CANCELLED } },
@@ -81,7 +85,10 @@ router.post('/', authenticate, async (req, res, next) => {
         ride.plannedPickupDt = new Date(req.body.plannedPickupDt).getTime();
         ride.plannedReturnDt = new Date(req.body.plannedReturnDt).getTime();
 
-        const calculatedPrice = parseFloat(((parseInt(ride.plannedReturnDt) - parseInt(ride.plannedPickupDt)) / (1000 * 60 * 60 * 24)) * vehicle.price.amount).toFixed(2)
+        const calculatedPrice =
+            parseFloat(((parseInt(new Date(ride.plannedReturnDt).getTime()) - parseInt(new Date(ride.plannedPickupDt).getTime())) / (1000 * 60 * 60 * 24)) * vehicle.price.amount).toFixed(2) >= 1
+                ? parseFloat(((parseInt(new Date(ride.plannedReturnDt).getTime()) - parseInt(new Date(ride.plannedPickupDt).getTime())) / (1000 * 60 * 60 * 24)) * vehicle.price.amount).toFixed(2)
+                : 1
         ride.price = {
             amount: calculatedPrice,
             currency: vehicle.price.currency
@@ -129,6 +136,7 @@ router.get('/:id/payment-intent', authenticate, async (req, res, next) => {
         const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(req.params.id) });
         if (!stripePaymentIntent) return next(new ResponseError("Payment intent not found", HTTP_STATUS_CODES.NOT_FOUND));
         if (new Date(stripePaymentIntent.createdDt).getTime() + TEN_MINUTES_IN_MILLISECONDS < new Date().getTime()) return next(new ResponseError("Cannot get the payment intent after payment window of 10 minutes", HTTP_STATUS_CODES.CONFLICT));
+
         // check the status to determine whether it has been paid
         const stripePaymentIntentInstance = await StripeService.retrievePaymentIntent(stripePaymentIntent.stripePaymentIntentId);
 

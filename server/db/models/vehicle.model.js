@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, SCOOTER_MAKERS, BIKE_MAKERS, COLLECTIONS, DATABASE_MODELS} = require('../../global');
+const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, SCOOTER_MAKERS, BIKE_MAKERS, COLLECTIONS, DATABASE_MODELS } = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
     lenderId: {
@@ -11,7 +11,7 @@ const vehicleSchema = mongoose.Schema({
         type: String,
         minLength: 1,
         maxLength: 100,
-        required: true 
+        required: true
     },
     description: {
         type: String,
@@ -31,16 +31,16 @@ const vehicleSchema = mongoose.Schema({
     },
     seats: {
         type: Number,
-        required: function(){
+        required: function () {
             return this.type == VEHICLE_TYPES.CAR
-        },  
+        },
         min: 2,
         max: 8
     },
     keyId: {
         type: String,
         ref: DATABASE_MODELS.KEY,
-        required: function() {
+        required: function () {
             return this.unlockTypes.includes(UNLOCK_TYPES.AUTOMATIC)
         }
     },
@@ -61,7 +61,7 @@ const vehicleSchema = mongoose.Schema({
             min: -180,
             max: 180,
             required: true
-        } 
+        }
     }],
     returnLocations: [{
         address: {
@@ -80,7 +80,7 @@ const vehicleSchema = mongoose.Schema({
             min: -180,
             max: 180,
             required: true
-        } 
+        }
     }],
     unlockTypes: {
         type: [{
@@ -90,7 +90,7 @@ const vehicleSchema = mongoose.Schema({
         validate: [unlockTypesSizeLimit, "Unlock types array must of 1 or 2 values"]
     },
     price: {
-        currency:{
+        currency: {
             type: String,
             enum: Object.values(CURRENCY_TYPES),
             required: true
