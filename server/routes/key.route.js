@@ -10,11 +10,11 @@ const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RID
 const ResponseError = require('../errors/responseError');
 const KeyService = require('../services/key.service');
 
-router.get('/auth-redirect/:keyId', authenticate, async (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.keyId)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
+router.get('/:id/auth-redirect', authenticate, async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
 
   try {
-    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.keyId);
+    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
     if (key.status != KEY_STATUSES.PENDING_AUTH_FLOW) return next(new ResponseError("Cannot generate auth redirect for keys that are not in pending auth flow", HTTP_STATUS_CODES.CONFLICT));
 
@@ -26,7 +26,7 @@ router.get('/auth-redirect/:keyId', authenticate, async (req, res, next) => {
 
     if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot add key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
-    const authRedirectUrl = SmartcarService.generateSmartcarConnectAuthRedirect(req.params.keyId);
+    const authRedirectUrl = SmartcarService.generateSmartcarConnectAuthRedirect(req.params.id);
     return res.status(HTTP_STATUS_CODES.OK).send({
       authRedirectUrl
     });
@@ -48,11 +48,29 @@ router.get('/auth-callback', async (req, res, next) => {
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
     if (key.status != KEY_STATUSES.PENDING_AUTH_FLOW) return next(new ResponseError("Cannot add a digital key if key status is not pending auth flow", HTTP_STATUS_CODES.CONFLICT));
 
+    const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
+    if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
+
     const authResponse = await SmartcarService.generateAccessTokenByAuthCode(code);
     const { vehicles } = await SmartcarService.getVehicles(authResponse.accessToken);
-    const vehicle = await SmartcarService.generateVehicleInstance(vehicles[0], authResponse.accessToken);
+    let finalVehicle = null;
+    for (let smartcarVehicle of vehicles) {
+      const smartcarVehicleInstance = await SmartcarService.generateVehicleInstance(smartcarVehicle, authResponse.accessToken);
+      if ((await smartcarVehicleInstance.vin()).vin == vehicle.vin) {
+        finalVehicle = smartcarVehicleInstance;
+        break;
+      }
+    }
 
-    await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(keyId) }, { smartcarAccessResponse: authResponse, status: KEY_STATUSES.ACTIVE, smartcarVehicleId: vehicle.id });
+    if (!finalVehicle) {
+      return res.status(HTTP_STATUS_CODES.OK).send({
+        error: "We could not get access to your vehicle",
+        status: HTTP_STATUS_CODES.BAD_REQUEST,
+        dt: new Date().getTime()
+      })
+    }
+
+    await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(keyId) }, { smartcarAccessResponse: authResponse, status: KEY_STATUSES.ACTIVE, smartcarVehicleId: finalVehicle.id });
 
     return res.sendStatus(HTTP_STATUS_CODES.OK);
   } catch (err) {
@@ -60,11 +78,11 @@ router.get('/auth-callback', async (req, res, next) => {
   }
 });
 
-router.get('/:keyId/access', authenticate, async (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.keyId)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
+router.get('/:id/access', authenticate, async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
 
   try {
-    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.keyId);
+    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
 
     const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
@@ -76,7 +94,7 @@ router.get('/:keyId/access', authenticate, async (req, res, next) => {
     if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot add key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
     const access = await SmartcarService.generateAccessTokenByRefreshToken(key.smartcarAccessResponse.refreshToken);
-    await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(req.params.keyId) }, { smartcarAccessResponse: access });
+    await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(req.params.id) }, { smartcarAccessResponse: access });
     return res.status(HTTP_STATUS_CODES.OK).send({
       access
     });
@@ -85,12 +103,12 @@ router.get('/:keyId/access', authenticate, async (req, res, next) => {
   }
 });
 
-router.post('/:keyId/:action', authenticate, async (req, res, next) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.keyId)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
+router.post('/:id/:action', authenticate, async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
   if (!Object.values(KEY_ACTIONS).includes(req.params.action)) return next(new ResponseError("Invalid action", HTTP_STATUS_CODES.BAD_REQUEST));
 
   try {
-    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.keyId);
+    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
     if (key.status != KEY_STATUSES.ACTIVE) return next(new ResponseError("Digital vehicle key is not active", HTTP_STATUS_CODES.CONFLICT));
 
@@ -101,7 +119,7 @@ router.post('/:keyId/:action', authenticate, async (req, res, next) => {
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
     if (lender.userId.toString() == req.user._id.toString()) {
-      const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.keyId);
+      const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.id);
       await KeyService.performActionOnVehicle(key.smartcarVehicleId.toString(), access.accessToken, req.params.action);
       await KeyService.saveActionPerformed(vehicle._id, req.user._id, req.params.action);
       return res.sendStatus(HTTP_STATUS_CODES.OK);
@@ -119,12 +137,42 @@ router.post('/:keyId/:action', authenticate, async (req, res, next) => {
 
     if (!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
-    const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.keyId);
+    const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.id);
     await KeyService.performActionOnVehicle(key.smartcarVehicleId.toString(), access.accessToken, req.params.action);
     await KeyService.saveActionPerformed(vehicle._id, req.user._id, req.params.action);
     return res.sendStatus(HTTP_STATUS_CODES.OK);
   } catch (err) {
     return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+  }
+});
+
+router.delete('/:id', authenticate, async (req, res, next) => {
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid key id", HTTP_STATUS_CODES.BAD_REQUEST));
+
+  try {
+    const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
+    if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+    const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
+    if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+    const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
+    if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+    if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot delete key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN))
+
+    let updatedVehicleUnlockType = false;
+    await DbService.delete(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(req.params.id) });
+    if (Object.values(vehicle.unlockTypes).includes(UNLOCK_TYPES.AUTOMATIC)) {
+      await DbService.update(COLLECTIONS.VEHICLES, { _id: mongoose.Types.ObjectId(vehicle._id) }, { unlockTypes: [UNLOCK_TYPES.MANUAL] });
+      updatedVehicleUnlockType = true;
+    }
+
+    return res.status(HTTP_STATUS_CODES.OK).send({
+      updatedVehicleUnlockType
+    })
+  } catch (err) {
+    return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
   }
 });
 

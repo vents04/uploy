@@ -23,7 +23,7 @@ router.post('/', authenticate, async (req, res, next) => {
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.body.vehicleId);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
         if (vehicle.status != VEHICLE_STATUSES.ACTIVE) return next(new ResponseError("Vehicle is not reservable", HTTP_STATUS_CODES.FORBIDDEN));
-        if (!vehicle.unlockTypes.includes(req.body.unlockType)) return next(new ResponseError("Vehicle does not support this unlock type", HTTP_STATUS_CODES.BAD_REQUEST));
+        if (!Object.values(vehicle.unlockTypes).includes(req.body.unlockType)) return next(new ResponseError("Vehicle does not support this unlock type", HTTP_STATUS_CODES.BAD_REQUEST));
 
         let pickupLocationMatch = false;
         for (let pickupLocation of vehicle.pickupLocations) {

@@ -225,16 +225,6 @@ const vehiclePostValidation = (data) => {
         }),
         type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).required(),
         seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required().min(1).max(8) }),
-        keyId: Joi.string().when('unlockTypes', {
-            is: ["AUTOMATIC", "MANUAL"], then: Joi.string().required(), otherwise: Joi.when('unlockTypes', {
-                is: ["AUTOMATIC"], then: Joi.string().required(), otherwise: Joi.string().allow(null).optional()
-            })
-        }).custom((value, helper) => {
-            if (!mongoose.Types.ObjectId.isValid(value)) {
-                return helper.message("Invalid key id");
-            }
-            return true;
-        }),
         pickupLocations: Joi.array().items({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,
@@ -277,7 +267,7 @@ const vehiclePostValidation = (data) => {
         }).required().messages({
             "any.required": `pickupLocation is a required field`
         }),
-        unlockTypes: Joi.string().valid(...Object.values(UNLOCK_TYPES)).required(),
+        unlockTypes: Joi.array().items(Joi.string().valid(...Object.values(UNLOCK_TYPES))).required().min(1).max(2),
         price: Joi.object({
             currency: Joi.string().valid(...Object.values(CURRENCY_TYPES)).required(),
             amount: Joi.number().min(1).required(),
@@ -308,7 +298,6 @@ const vehicleUpdateValidation = (data) => {
         }),
         type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).required(),
         seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required().min(1).max(8) }),
-        smartCarKey: Joi.alternatives().conditional('unlockTypes', { is: "AUTOMATIC", then: Joi.string().required() }),
         pickupLocations: Joi.array().items({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,
@@ -351,7 +340,7 @@ const vehicleUpdateValidation = (data) => {
         }).required().messages({
             "any.required": `pickupLocation is a required field`
         }),
-        unlockTypes: Joi.string().valid(...Object.values(UNLOCK_TYPES)).required(),
+        unlockTypes: Joi.array().items(Joi.string().valid(...Object.values(UNLOCK_TYPES))).required().min(1).max(2),
         price: Joi.object({
             currency: Joi.string().valid(...Object.values(CURRENCY_TYPES)).required(),
             amount: Joi.number().min(1).required(),

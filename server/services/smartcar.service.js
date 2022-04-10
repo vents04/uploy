@@ -4,13 +4,13 @@ const { SMARTCAR_ID, SMARTCAR_SECRET, NODE_ENVIRONMENT, NODE_ENVIRONMENTS } = re
 const client = new smartcar.AuthClient({
     clientId: SMARTCAR_ID,
     clientSecret: SMARTCAR_SECRET,
-    redirectUri: 'http://localhost:6140/smartcar/auth-callback',
+    redirectUri: 'http://localhost:6140/key/auth-callback',
     testMode: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT
 });
 
 const SmartcarService = {
-    generateSmartcarConnectAuthRedirect: (keyId, vin) => {
-        const scope = ["required:control_security"];
+    generateSmartcarConnectAuthRedirect: (keyId) => {
+        const scope = ["required:control_security", "required:read_vin"];
         const options = { state: keyId };
         const auth = client.getAuthUrl(scope, options);
 

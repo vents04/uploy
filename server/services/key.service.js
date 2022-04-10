@@ -1,11 +1,26 @@
 const mongoose = require("mongoose");
 const VehicleAction = require("../db/models/vehicleAction.model");
+const Key = require("../db/models/key.model");
 const { KEY_ACTIONS, COLLECTIONS, WEEK_IN_MILLISECONDS } = require("../global");
 const DbService = require("./db.service");
 const SmartcarService = require("./smartcar.service");
 const cron = require('node-cron');
 
 const KeyService = {
+
+    generateDefaultKey: async (vehicleId) => {
+        const key = new Key({
+            vehicleId
+        });
+        await DbService.create(COLLECTIONS.KEYS, key);
+        return true;
+    },
+
+    checkForExistingKey: async (vehicleId) => {
+        const key = await DbService.getOne(COLLECTIONS.KEYS, { vehicleId: mongoose.Types.ObjectId(vehicleId) });
+        return key ? true : false
+    },
+
     performActionOnVehicle: async (smartcarVehicleId, accessToken, action) => {
         const { vehicles } = await SmartcarService.getVehicles(accessToken);
         for (let currentVehicle of vehicles) {

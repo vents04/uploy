@@ -37,13 +37,6 @@ const vehicleSchema = mongoose.Schema({
         min: 2,
         max: 8
     },
-    keyId: {
-        type: String,
-        ref: DATABASE_MODELS.KEY,
-        required: function () {
-            return this.unlockTypes.includes(UNLOCK_TYPES.AUTOMATIC)
-        }
-    },
     pickupLocations: [{
         address: {
             type: String,
