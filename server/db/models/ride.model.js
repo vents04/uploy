@@ -32,7 +32,7 @@ const rideSchema = mongoose.Schema({
     status: {
         type: String,
         enum: Object.values(RIDE_STATUSES),
-        default: RIDE_STATUSES.PENDING_APPROVAL
+        required: true
     },
     pickupLocation: {
         address: {

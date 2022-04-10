@@ -123,6 +123,9 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
     if (lender.userId.toString() == req.user._id.toString()) {
+      const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
+      if (ride.unlockType == UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Performing actions on vehicle is prohibited during ongoing rides", HTTP_STATUS_CODES.CONFLICT));
+
       const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.id);
       await KeyService.performActionOnVehicle(key.smartcarVehicleId.toString(), access.accessToken, req.params.action);
       await KeyService.saveActionPerformed(vehicle._id, req.user._id, req.params.action);
@@ -130,13 +133,10 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
     }
 
     let canUnlock = false;
-    const rides = await DbService.getMany(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
-    for (let ride of rides) {
-      if (ride.userId.toString() == req.user._id.toString()) {
-        if (ride.unlockType != UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Unlocking vehicle with digital key for this ride is not allowed", HTTP_STATUS_CODES.CONFLICT));
-        canUnlock = true;
-        break;
-      }
+    const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
+    if (ride.userId.toString() == req.user._id.toString()) {
+      if (ride.unlockType != UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Unlocking vehicle with digital key for this ride is not allowed", HTTP_STATUS_CODES.CONFLICT));
+      canUnlock = true;
     }
 
     if (!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
@@ -164,6 +164,18 @@ router.delete('/:id', authenticate, async (req, res, next) => {
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
     if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot delete key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN))
+
+    const rides = await DbService.getMany(COLLECTIONS.RIDES, {
+      vehicleId: mongoose.Types.ObjectId(vehicle._id),
+      "$or": [
+        { status: RIDE_STATUSES.AWAITING },
+        { status: RIDE_STATUSES.AWAITING_PAYMENT },
+        { status: RIDE_STATUSES.ONGOING },
+        { status: RIDE_STATUSES.PENDING_APPROVAL }
+      ],
+      unlockType: UNLOCK_TYPES.AUTOMATIC
+    });
+    if (rides.length > 0) return next(new ResponseError("Cannot remove digital key because there are current and/or future rides which are not cancelled, finished or cancelled by the system that rely on the digital key", HTTP_STATUS_CODES.CONFLICT))
 
     let updatedVehicleUnlockType = false;
     await DbService.delete(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(req.params.id) });
