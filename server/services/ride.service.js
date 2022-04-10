@@ -24,10 +24,7 @@ const RideService = {
     },
 
     addRideToPendingApprovalTimeouts: async (rideId, plannedPickupDt) => {
-        console.log(new Date(plannedPickupDt).getTime());
-        console.log(new Date().getTime());
         const rideTimeout = setTimeout(function () {
-            console.log("pending approval delete" + new Date());
             RideService.cancelRide(rideId);
             clearTimeout(pendingApprovalRidesTimeouts[pendingApprovalRidesTimeouts.length - 1])
             pendingApprovalRidesTimeouts.splice(pendingApprovalRidesTimeouts.length - 1, 1);
@@ -49,12 +46,10 @@ const RideService = {
 
     addRideToAwaitingPaymentTimeouts: async (rideId, createdDt) => {
         const rideTimeout = setTimeout(async function () {
-            console.log("awaiting payment delete" + new Date());
             const paymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(rideId) });
             if (paymentIntent) {
                 const paymentIntentInstance = await StripeService.retrievePaymentIntent(paymentIntent.stripePaymentIntentId);
                 if (paymentIntentInstance.status == 'succeeded') {
-                    console.log("updatevam che sum sburkal")
                     await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(rideId) }, { status: RIDE_STATUSES.PENDING_APPROVAL });
                     return true;
                 }
@@ -64,7 +59,6 @@ const RideService = {
             clearTimeout(awaitingPaymentRidesTimeouts[awaitingPaymentRidesTimeouts.length - 1])
             awaitingPaymentRidesTimeouts.splice(awaitingPaymentRidesTimeouts.length - 1, 1);
         }, (new Date(new Date(new Date(createdDt).getTime() + TEN_MINUTES_IN_MILLISECONDS).getTime() - new Date().getTime()).getTime()));
-        console.log("add awaiting payment for deletion");
         awaitingPaymentRidesTimeouts.push(rideTimeout);
         return true;
     },
