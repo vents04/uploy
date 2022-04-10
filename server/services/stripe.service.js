@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const DbService = require('./db.service');
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY, ACCOUNT_LINK_TYPES, NODE_ENVIRONMENTS, NODE_ENVIRONMENT } = require('../global');
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, STRIPE_SECRET_KEY, STRIPE_PUBLIC_KEY, ACCOUNT_LINK_TYPES, NODE_ENVIRONMENTS, NODE_ENVIRONMENT, STRIPE_WEBHOOK_SIGNING_SECRET } = require('../global');
 const stripe = require('stripe')(STRIPE_SECRET_KEY);
 
 const StripeService = {
@@ -73,6 +73,11 @@ const StripeService = {
     cancelPaymentIntent: async (stripePaymentIntentId) => {
         const paymentIntent = await stripe.paymentIntents.cancel(stripePaymentIntentId);
         return paymentIntent;
+    },
+
+    constructEvent: async (body, signature) => {
+        let event = await stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SIGNING_SECRET);
+        return event;
     },
 
     getPrice: (ride) => {

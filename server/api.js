@@ -14,6 +14,12 @@ const RideService = require('./services/ride.service');
 app
     .use(cors())
     .use(express.json({
+        verify: function (req, res, buf) {
+            var url = req.originalUrl;
+            if (url.includes('/webhook')) {
+                req.rawBody = buf.toString()
+            }
+        },
         limit: '50mb'
     }))
     .use(express.urlencoded({ extended: true, limit: '50mb' }))

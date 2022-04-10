@@ -6,7 +6,7 @@ const Ride = require("../db/models/ride.model");
 const ResponseError = require("../errors/responseError");
 const DbService = require("../services/db.service");
 
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES } = require("../global");
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_WEBHOOK_SIGNING_SECRET } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
 const { ridePostValidation, rideStatusUpdateValidation } = require("../validation/hapi");
 const RideService = require("../services/ride.service");
@@ -257,6 +257,28 @@ router.put('/:id/lender-update', authenticate, async (req, res, next) => {
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (e) {
         return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res, next) => {
+    const signature = req.headers['stripe-signature'];
+
+    try {
+        let event = await StripeService.constructEvent(req.rawBody, signature);
+
+        switch (event.type) {
+            case 'payment_intent.succeeded':
+                const paymentIntent = event.data.object;
+                const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { stripePaymentIntentId: paymentIntent.id });
+                if (stripePaymentIntent) {
+                    await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(stripePaymentIntent.rideId) }, { status: RIDE_STATUSES.PENDING_APPROVAL });
+                }
+                break;
+        }
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
     }
 });
 
