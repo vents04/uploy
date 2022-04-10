@@ -17,6 +17,8 @@ router.post('/', authenticate, async (req, res, next) => {
     const { error } = ridePostValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
+    let rideInstance = null;
+
     try {
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.body.vehicleId);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
@@ -95,16 +97,17 @@ router.post('/', authenticate, async (req, res, next) => {
         }
 
         await DbService.create(COLLECTIONS.RIDES, ride);
-        RideService.addRideToPendingApprovalTimeouts(ride._id, ride.plannedPickupDt);
+        rideInstance = ride;
+        RideService.addRideToAwaitingPaymentTimeouts(ride._id, ride.createdDt);
 
         const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
         const stripeCustomer = await DbService.getOne(COLLECTIONS.STRIPE_CUSTOMERS, { userId: mongoose.Types.ObjectId(req.user._id) });
         if (!stripeAccount) {
-            // cancel trip
+            await RideService.cancelRide(ride._id);
             return next(new ResponseError("Cannot create checkout for this ride because we could not find the lender's Stripe account or his stripe account is blocked", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
         }
         if (!stripeCustomer) {
-            // cancel trip
+            await RideService.cancelRide(ride._id);
             return next(new ResponseError("Cannot create checkout for this ride because we could not find your Stripe customer instance", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
         }
 
@@ -119,7 +122,7 @@ router.post('/', authenticate, async (req, res, next) => {
             paymentIntentClientSecret: paymentIntent.client_secret
         });
     } catch (e) {
-        // cancel ride if exists
+        if (rideInstance) await RideService.cancelRide(rideInstance._id);
         return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
@@ -260,7 +263,9 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
                 const paymentIntent = event.data.object;
                 const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { stripePaymentIntentId: paymentIntent.id });
                 if (stripePaymentIntent) {
+                    const ride = await DbService.getById(COLLECTIONS.RIDES, stripePaymentIntent.rideId)
                     await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(stripePaymentIntent.rideId) }, { status: RIDE_STATUSES.PENDING_APPROVAL });
+                    await RideService.addRideToPendingApprovalTimeouts(ride._id, ride.createdDt)
                 }
                 break;
         }
