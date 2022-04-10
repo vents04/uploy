@@ -124,10 +124,11 @@ router.get('/:id/payment-intent', authenticate, async (req, res, next) => {
         const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
         if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
         if (ride.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot get the payment intent for this ride", HTTP_STATUS_CODES.FORBIDDEN));
+        if (ride.status != RIDE_STATUSES.AWAITING_PAYMENT) return next(new ResponseError("Cannot get the payment intent for rides in statuses different than awaiting payment", HTTP_STATUS_CODES.CONFLICT));
 
         const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(req.params.id) });
         if (!stripePaymentIntent) return next(new ResponseError("Payment intent not found", HTTP_STATUS_CODES.NOT_FOUND));
-
+        if (new Date(stripePaymentIntent.createdDt).getTime() + TEN_MINUTES_IN_MILLISECONDS < new Date().getTime()) return next(new ResponseError("Cannot get the payment intent after payment window of 10 minutes", HTTP_STATUS_CODES.CONFLICT));
         // check the status to determine whether it has been paid
         const stripePaymentIntentInstance = await StripeService.retrievePaymentIntent(stripePaymentIntent.stripePaymentIntentId);
 
