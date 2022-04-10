@@ -6,11 +6,13 @@ const User = require('../db/models/user.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 const AuthenticationService = require('../services/authentication.service');
+const StripeCustomer = require('../db/models/stripeCustomer.model');
 const Lender = require('../db/models/lender.model');
 
 const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
+const StripeService = require('../services/stripe.service');
 
 router.post("/signup", async (req, res, next) => {
     const { error } = signupValidation(req.body);
@@ -23,6 +25,13 @@ router.post("/signup", async (req, res, next) => {
         const user = new User(req.body);
         user.password = AuthenticationService.hashPassword(req.body.password);
         await DbService.create(COLLECTIONS.USERS, user);
+
+        const customer = await StripeService.createCustomer(user);
+        const stripeCustomer = new StripeCustomer({
+            stripeCustomerId: customer.id,
+            userId: user._id,
+        });
+        await DbService.create(COLLECTIONS.STRIPE_CUSTOMERS, stripeCustomer);
 
         setTimeout(() => {
             const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });

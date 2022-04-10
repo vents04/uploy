@@ -9,7 +9,8 @@ const stripeAccountSchema = mongoose.Schema({
     lenderId: {
         type: mongoose.Types.ObjectId,
         ref: DATABASE_MODELS.USER,
-        required: true
+        required: true,
+        unique: true
     },
     status: {
         type: String,

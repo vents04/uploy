@@ -38,6 +38,36 @@ const StripeService = {
         return accountLink;
     },
 
+    createCustomer: async (user) => {
+        const customer = await stripe.customers.create({
+            name: `${user.firstName} ${user.lastName}`,
+            email: user.email,
+            phone: user.phone
+        });
+        return customer;
+    },
+
+    retrieveCustomer: async (customerId) => {
+        const customer = await stripe.customers.retrieve(customerId);
+        return customer;
+    },
+
+    createPaymentIntent: async (amount, currency, stripeAccountId, stripeCustomerId) => {
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount: amount,
+            currency: currency.toLowerCase(),
+            customer: stripeCustomerId,
+            automatic_payment_methods: {
+                enabled: true,
+            },
+            application_fee_amount: amount * 0.15,
+            transfer_data: {
+                destination: stripeAccountId,
+            },
+        });
+        return paymentIntent;
+    },
+
     getPrice: (ride) => {
         return new Promise(async (resolve, reject) => {
             if (ride.status != RIDE_STATUSES.ONGOING) {
