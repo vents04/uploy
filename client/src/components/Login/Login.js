@@ -27,7 +27,7 @@ export default class Login extends Component {
                 showError: true
             })
         } else {
-            this.setState({showLoading: true, showError: false, error: ""});
+            this.setState({ showLoading: true, showError: false, error: "" });
             ApiRequests.post("user/login", {}, {
                 email: this.state.email,
                 password: this.state.password
@@ -46,7 +46,7 @@ export default class Login extends Component {
                     this.setState({ showError: true, error: "Request setting error" });
                 }
             }).finally(() => {
-                this.setState({showLoading: false})
+                this.setState({ showLoading: false })
             })
         }
     }
@@ -65,14 +65,18 @@ export default class Login extends Component {
                     <div className="modal-content">
                         <p className="modal-input-hint">Email:</p>
                         <input type="text" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({email: evt.target.value, showError: false, error: ""})
-                        }}/>
+                            onInput={(evt) => {
+                                this.setState({ email: evt.target.value, showError: false, error: "" })
+                            }}
+                            autoComplete='new-email'
+                        />
                         <p className="modal-input-hint">Password:</p>
                         <input type="password" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({password: evt.target.value, showError: false, error: ""})
-                        }}/>
+                            onInput={(evt) => {
+                                this.setState({ password: evt.target.value, showError: false, error: "" })
+                            }}
+                            autoComplete='new-password'
+                        />
                     </div>
                     <div className="modal-footer">
                         {
@@ -82,8 +86,8 @@ export default class Login extends Component {
                         <button className="action-button" onClick={this.login}>
                             {
                                 this.state.showLoading
-                                ? <Sentry size={14} />
-                                : "Continue"
+                                    ? <Sentry size={14} />
+                                    : "Continue"
                             }
                         </button>
                         <p className="modal-redirect-text" onClick={() => {

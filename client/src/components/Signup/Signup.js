@@ -9,6 +9,9 @@ import Auth from '../../classes/Auth';
 import { Sentry } from "react-activity";
 import "react-activity/dist/library.css";
 
+import PhoneInput from 'react-phone-input-2'
+import 'react-phone-input-2/lib/style.css'
+
 export default class Signup extends Component {
 
     state = {
@@ -29,7 +32,7 @@ export default class Signup extends Component {
                 showError: true
             })
         } else {
-            this.setState({showLoading: true, showError: false, error: ""});
+            this.setState({ showLoading: true, showError: false, error: "" });
             ApiRequests.post("user/signup", {}, {
                 firstName: this.state.firstName,
                 lastName: this.state.lastName,
@@ -50,7 +53,7 @@ export default class Signup extends Component {
                     this.setState({ showError: true, error: "Request setting error" });
                 }
             }).finally(() => {
-                this.setState({showLoading: false})
+                this.setState({ showLoading: false })
             })
         }
     }
@@ -69,29 +72,41 @@ export default class Signup extends Component {
                     <div className="modal-content">
                         <p className="modal-input-hint">First name:</p>
                         <input type="text" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({firstName: evt.target.value, showError: false, error: ""})
-                        }}/>
+                            onInput={(evt) => {
+                                this.setState({ firstName: evt.target.value, showError: false, error: "" })
+                            }}
+                            autoComplete='new-first-name'
+                        />
                         <p className="modal-input-hint">Last name:</p>
                         <input type="text" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({lastName: evt.target.value, showError: false, error: ""})
-                        }}/>
+                            onInput={(evt) => {
+                                this.setState({ lastName: evt.target.value, showError: false, error: "" })
+                            }}
+                            autoComplete='new-last-name'
+                        />
                         <p className="modal-input-hint">Email:</p>
                         <input type="text" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({email: evt.target.value, showError: false, error: ""})
-                        }}/>
+                            onInput={(evt) => {
+                                this.setState({ email: evt.target.value, showError: false, error: "" })
+                            }}
+                            autoComplete='new-email'
+                        />
                         <p className="modal-input-hint">Phone number:</p>
-                        <input type="text" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({phoneNumber: evt.target.value, showError: false, error: ""})
-                        }}/>
+                        <PhoneInput
+                            containerStyle={{ marginTop: "8px" }}
+                            inputClass='modal-input'
+                            country={"bg"}
+                            value={this.state.phoneNumber}
+                            onChange={phoneNumber => this.setState({ phoneNumber, showError: false, error: "" })}
+                            autoComplete='new-phone-number'
+                        />
                         <p className="modal-input-hint">Password:</p>
                         <input type="password" placeholder="Type here" className="modal-input"
-                        onInput={(evt) => {
-                            this.setState({password: evt.target.value, showError: false, error: ""})
-                        }}/>
+                            onInput={(evt) => {
+                                this.setState({ password: evt.target.value, showError: false, error: "" })
+                            }}
+                            autoComplete='new-password'
+                        />
                     </div>
                     <div className="modal-footer">
                         {
@@ -101,8 +116,8 @@ export default class Signup extends Component {
                         <button className="action-button" onClick={this.signup}>
                             {
                                 this.state.showLoading
-                                ? <Sentry size={14} />
-                                : "Continue"
+                                    ? <Sentry size={14} />
+                                    : "Continue"
                             }
                         </button>
                         <p className="modal-redirect-text" onClick={() => {
