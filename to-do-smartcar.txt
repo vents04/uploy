@@ -1,6 +1,0 @@
-Smartcar api integration to-do:
-- get endpoint for connect auth flow link from smartcar api
-- get endpoint in the frontend if the user successfully connects their vehicle
-- get endpoint in the frontend if the user unsuccessfully connects their vehicle
-- put endpoint for lenders to remove the digital key for their vehicle from our platform
-- put endpoint for lenders to remove the digital key for their vehicle from being visible to new clients
