@@ -9,7 +9,7 @@ const AuthenticationService = require('../services/authentication.service');
 const StripeCustomer = require('../db/models/stripeCustomer.model');
 const Lender = require('../db/models/lender.model');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, USER_STATUSES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { signupValidation, loginValidation, userUpdateValidation } = require('../validation/hapi');
 const StripeService = require('../services/stripe.service');
@@ -71,6 +71,8 @@ router.put('/', authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
+        if (!req.isAdmin && req.body.status == USER_STATUSES.BLOCKED) return next(new ResponseError("Cannot change your status", HTTP_STATUS_CODES.FORBIDDEN));
+
         const availableUser = await DbService.getOne(COLLECTIONS.USERS, {
             "$or": [
                 { email: req.body.email },
@@ -86,6 +88,39 @@ router.put('/', authenticate, async (req, res, next) => {
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || "Internal server error", err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.put('/:id', authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may update users", HTTP_STATUS_CODES.FORBIDDEN));
+
+    const { error } = userUpdateValidation(req.body);
+    if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const user = await DbService.getById(COLLECTIONS.USERS, req.params.id);
+        if (!user) return next(new ResponseError("User not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        await DbService.update(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.params.id) }, req.body);
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.delete('/:id', authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may delete users", HTTP_STATUS_CODES.FORBIDDEN));
+
+    try {
+        const user = await DbService.getById(COLLECTIONS.USERS, req.params.id);
+        if (!user) return next(new ResponseError("User not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        await DbService.delte(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.params.id) });
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
 

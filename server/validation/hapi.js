@@ -2,7 +2,7 @@ const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
 const vindec = require('vindec');
-const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES } = require('../global');
+const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES, USER_STATUSES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({
@@ -77,7 +77,7 @@ const loginValidation = (data) => {
     return schema.validate(data);
 }
 
-const userUpdateValidation = data => {
+const userUpdateValidation = (data, isAdmin) => {
     const schema = Joi.object({
         email: Joi.string().min(3).max(320).optional().email().messages({
             "string.base": `User email should have at least 3 characters`,
@@ -123,8 +123,8 @@ const userUpdateValidation = data => {
         profilePicture: Joi.string().optional().allow(null).messages({
             "string.base": `Profile picture should have at least 1 character`,
             "string.empty": `Profile picture should not be empty`,
-        })
-
+        }),
+        status: Joi.string().valid(...Object.values(USER_STATUSES)).optional()
     })
     return schema.validate(data);
 }

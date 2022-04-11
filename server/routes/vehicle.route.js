@@ -40,7 +40,7 @@ router.put("/:id", authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        if (!req.admin && req.body.status && req.body.status != VEHICLE_STATUSES.ACTIVE && req.body.status != VEHICLE_STATUSES.INACTIVE)
+        if (!req.isAdmin && req.body.status && req.body.status != VEHICLE_STATUSES.ACTIVE && req.body.status != VEHICLE_STATUSES.INACTIVE)
             return next(new ResponseError("Cannot update vehicle status to different values than active and inactive", HTTP_STATUS_CODES.CONFLICT));
 
         const vehicle = DbService.getById(COLLECTIONS.VEHICLES, req.params.id);
