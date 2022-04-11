@@ -3,11 +3,12 @@ const router = express.Router();
 const mongoose = require('mongoose');
 
 const { authenticate } = require('../middlewares/authenticate');
-const { driverLicensePostValidation } = require('../validation/hapi');
+const { driverLicensePostValidation, driverLicenseUpdateValidation } = require('../validation/hapi');
 const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, DRIVER_LICENSE_STATUSES, TEN_MINUTES_IN_MILLISECONDS } = require('../global');
 const DbService = require('../services/db.service');
 const DriverLicense = require('../db/models/driverLicense.model');
 const ResponseError = require('../errors/responseError');
+const DriverLicenseService = require('../services/driverLicense.service');
 
 router.post("/", authenticate, async (req, res, next) => {
     const { error } = driverLicensePostValidation(req.body);
@@ -34,6 +35,32 @@ router.post("/", authenticate, async (req, res, next) => {
         return res.sendStatus(HTTP_STATUS_CODES.CREATED);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+    }
+});
+
+router.put("/:id", authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may update driver licenses", HTTP_STATUS_CODES.FORBIDDEN));
+
+    const { error } = driverLicenseUpdateValidation(req.body);
+    if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const driverLicense = await DbService.getById(COLLECTIONS.DRIVER_LICENSES, req.params.id);
+        if (!driverLicense) return next(new ResponseError("Driver license not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        await DbService.update(COLLECTIONS.DRIVER_LICENSES, { _id: mongoose.Types.ObjectId(req.params.id) }, req.body);
+
+        if (req.body.status) {
+            if (req.body.status == DRIVER_LICENSE_STATUSES.APPROVED) {
+                await DriverLicenseService.addToDriverLicensesExpirationTimeouts(driverLicense._id, (req.body.expiryDt) ? req.body.expiryDt : driverLicense.expiryDt ? driverLicense.expiryDt : new Date().getTime())
+            } else {
+
+            }
+        }
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
 

@@ -2,7 +2,7 @@ const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
 const vindec = require('vindec');
-const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES, USER_STATUSES } = require('../global');
+const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES, USER_STATUSES, DRIVER_LICENSE_STATUSES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({
@@ -77,7 +77,7 @@ const loginValidation = (data) => {
     return schema.validate(data);
 }
 
-const userUpdateValidation = (data, isAdmin) => {
+const userUpdateValidation = (data) => {
     const schema = Joi.object({
         email: Joi.string().min(3).max(320).optional().email().messages({
             "string.base": `User email should have at least 3 characters`,
@@ -401,6 +401,22 @@ const driverLicensePostValidation = (data) => {
     return schema.validate(data);
 }
 
+const rideRefundPostValidation = (data) => {
+    const schema = Joi.object({
+        percentageOfRefund: Joi.number().min(1).max(100).optional()
+    })
+    return schema.validate(data);
+}
+
+const driverLicenseUpdateValidation = (data) => {
+    const schema = Joi.object({
+        vehicleTypes: Joi.array().items(Joi.string().valid(...Object.values(VEHICLE_TYPES))).optional(),
+        status: Joi.string().valid(...Object.values(DRIVER_LICENSE_STATUSES)).optional(),
+        expiryDt: Joi.date().optional()
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
@@ -411,5 +427,7 @@ module.exports = {
     vehiclePostValidation,
     vehicleUpdateValidation,
     reviewPostValidation,
-    driverLicensePostValidation
+    driverLicensePostValidation,
+    rideRefundPostValidation,
+    driverLicenseUpdateValidation
 }

@@ -19,8 +19,11 @@ const DriverLicenseService = {
     },
 
     addToDriverLicensesExpirationTimeouts: async (driverLicenseId, expiryDt) => {
-        const driverLicenseTimeout = setTimeout(function () {
-            DriverLicenseService.changeDriverLicenseStatusToExpired(driverLicenseId);
+        const driverLicenseTimeout = setTimeout(async function () {
+            const driverLicense = await DbService.getById(COLLECTIONS.DRIVER_LICENSES, driverLicenseId);
+            if (driverLicense && driverLicense.status == DRIVER_LICENSE_STATUSES.APPROVED) {
+                await DriverLicenseService.changeDriverLicenseStatusToExpired(driverLicenseId);
+            }
             clearTimeout(driverLicensesExpirationTimeouts[driverLicensesExpirationTimeouts.length - 1])
             driverLicensesExpirationTimeouts.splice(driverLicensesExpirationTimeouts.length - 1, 1);
         }, (new Date(expiryDt).getTime() - new Date().getTime()));

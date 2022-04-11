@@ -8,7 +8,7 @@ const DbService = require("../services/db.service");
 
 const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_WEBHOOK_SIGNING_SECRET, USER_STATUSES } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
-const { ridePostValidation, rideStatusUpdateValidation } = require("../validation/hapi");
+const { ridePostValidation, rideStatusUpdateValidation, rideRefundPostValidation } = require("../validation/hapi");
 const RideService = require("../services/ride.service");
 const StripeService = require("../services/stripe.service");
 const StripePaymentIntent = require("../db/models/stripePaymentIntent.model");
@@ -256,7 +256,7 @@ router.put('/:id', authenticate, async (req, res, next) => {
                         actualReturnDt: new Date().getTime()
                     });
                 } else if (req.body.status == RIDE_STATUSES.CANCELLED) {
-                    await RideService.refundPayment(ride._id);
+                    await RideService.refundPayment(ride._id, ride.price.amount, 100);
                 }
 
                 return res.sendStatus(HTTP_STATUS_CODES.OK);
@@ -276,7 +276,7 @@ router.put('/:id', authenticate, async (req, res, next) => {
                     actualPickupDt: new Date().getTime()
                 });
             } else if (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL) {
-                await RideService.refundPayment(ride._id);
+                await RideService.refundPayment(ride._id, ride.price.amount, 100);
             }
 
             return res.sendStatus(HTTP_STATUS_CODES.OK);
@@ -309,6 +309,42 @@ router.post('/stripe/webhook', express.raw({ type: 'application/json' }), async 
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+    }
+});
+
+router.post('/:id/stripe/cancel-payment-intent', authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may file refunds for rides", HTTP_STATUS_CODES.FORBIDDEN));
+
+    try {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
+        if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(ride._id) });
+        if (!stripePaymentIntent) return next(new ResponseError("Payment intent not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        await StripeService.cancelPaymentIntent(stripePaymentIntent.stripePaymentIntentId)
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK)
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.post('/:id/stripe/refund', authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may file refunds for rides", HTTP_STATUS_CODES.FORBIDDEN));
+
+    const { error } = rideRefundPostValidation(req.body);
+    if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
+        if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        await RideService.refundPayment(ride._id, ride.price.amount, req.body.percentageOfRefund ? req.body.percentageOfRefund : 100);
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK)
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
 });
 

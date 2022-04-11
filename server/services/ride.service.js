@@ -26,8 +26,11 @@ const RideService = {
     },
 
     addRideToPendingApprovalTimeouts: async (rideId, plannedPickupDt, createdDt) => {
-        const rideTimeout = setTimeout(function () {
-            RideService.cancelRide(rideId);
+        const rideTimeout = setTimeout(async function () {
+            const ride = await DbService.getById(COLLECTIONS.RIDES, rideId);
+            if (ride && ride.status == RIDE_STATUSES.PENDING_APPROVAL) {
+                await RideService.cancelRide(rideId);
+            }
             clearTimeout(pendingApprovalRidesTimeouts[pendingApprovalRidesTimeouts.length - 1])
             pendingApprovalRidesTimeouts.splice(pendingApprovalRidesTimeouts.length - 1, 1);
         }, ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime()) / 2) - new Date().getTime()));
@@ -56,8 +59,14 @@ const RideService = {
                     return true;
                 }
             }
-            RideService.cancelRide(rideId);
-            await StripeService.cancelPaymentIntent(paymentIntent.stripePaymentIntentId);
+            const ride = await DbService.getById(COLLECTIONS.RIDES, rideId);
+            if (ride) {
+                if (ride.status != RIDE_STATUSES.CANCELLED
+                    && ride.status != RIDE_STATUSES.FINISHED) {
+                    await RideService.cancelRide(rideId);
+                    await StripeService.cancelPaymentIntent(paymentIntent.stripePaymentIntentId);
+                }
+            }
             clearTimeout(awaitingPaymentRidesTimeouts[awaitingPaymentRidesTimeouts.length - 1])
             awaitingPaymentRidesTimeouts.splice(awaitingPaymentRidesTimeouts.length - 1, 1);
         }, (new Date(new Date(new Date(createdDt).getTime() + TEN_MINUTES_IN_MILLISECONDS).getTime() - new Date().getTime()).getTime()));
@@ -65,12 +74,12 @@ const RideService = {
         return true;
     },
 
-    refundPayment: async (rideId) => {
+    refundPayment: async (rideId, price, percentageOfRefund) => {
         const ride = await DbService.getById(COLLECTIONS.RIDES, rideId);
         if (ride) {
             const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(rideId) });
             if (stripePaymentIntent) {
-                await StripeService.refundPaymentIntent(stripePaymentIntent.stripePaymentIntentId);
+                await StripeService.refundPaymentIntent(stripePaymentIntent.stripePaymentIntentId, price, percentageOfRefund);
             }
         }
         return true;

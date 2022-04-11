@@ -73,9 +73,10 @@ const StripeService = {
         return paymentIntent;
     },
 
-    refundPaymentIntent: async (stripePaymentIntentId) => {
+    refundPaymentIntent: async (stripePaymentIntentId, price, percentageOfRefund) => {
         const refund = await stripe.refunds.create({
             payment_intent: stripePaymentIntentId,
+            amount: (percentageOfRefund / 100) * (price * 100)
         });
         return refund;
     },
