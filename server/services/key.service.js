@@ -7,7 +7,6 @@ const SmartcarService = require("./smartcar.service");
 const cron = require('node-cron');
 
 const KeyService = {
-
     generateDefaultKey: async (vehicleId) => {
         const key = new Key({
             vehicleId

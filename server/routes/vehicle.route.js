@@ -6,7 +6,7 @@ const Vehicle = require('../db/models/vehicle.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES, VEHICLE_STATUSES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES, VEHICLE_STATUSES, LENDER_STATUSES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { vehiclePostValidation, vehicleUpdateValidation } = require('../validation/hapi');
 const KeyService = require('../services/key.service');
@@ -107,10 +107,19 @@ router.get("/search", async (req, res, next) => {
     try {
         let shouldPush = true;
         let vehiclesForCheck = [];
-        const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {})
+
+        const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {});
+
         for (let vehicle of vehicles) {
+            if (vehicle.status != VEHICLE_STATUSES.ACTIVE) continue;
+
+            const vehicleOwner = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
+            if (!vehicleOwner || vehicleOwner.status != LENDER_STATUSES.ACTIVE) continue;
+            const user = await DbService.getById(COLLECTIONS.USERS, vehicleOwner.userId);
+            if (!user) continue;
+            Object.assign(vehicle, { user: user });
+
             let distances = [];
-            let canBeGot = true;
 
             const rides = await DbService.getMany(COLLECTIONS.RIDES, {
                 vehicleId: mongoose.Types.ObjectId(vehicle._id),
@@ -120,63 +129,56 @@ router.get("/search", async (req, res, next) => {
                 ]
             });
 
+
             for (let ride of rides) {
-                if (!(new Date(req.query.pdt).getTime() - THIRTY_MINUTES_IN_MILLISECONDS > new Date(ride.plannedReturnDt).getTime())
-                    && !(new Date(req.query.rdt).getTime() + THIRTY_MINUTES_IN_MILLISECONDS < new Date(ride.plannedPickupDt).getTime())) {
-                    canBeGot = false;
-                }
-            }
+                if (new Date(req.query.pdt).getTime() - THIRTY_MINUTES_IN_MILLISECONDS > new Date(ride.plannedReturnDt).getTime()
+                    || new Date(req.query.rdt).getTime() + THIRTY_MINUTES_IN_MILLISECONDS < new Date(ride.plannedPickupDt).getTime()) {
+                    for (let pickupLocation of vehicle.pickupLocations) {
+                        let lat1 = pickupLocation.lat;
+                        let lat2 = req.query.lat;
+                        let lng1 = pickupLocation.lon;
+                        let lng2 = req.query.lon;
 
-            if (canBeGot) {
-                for (let pickupLocation of vehicle.pickupLocations) {
-                    let lat1 = pickupLocation.lat;
-                    let lat2 = req.query.lat;
-                    let lng1 = pickupLocation.lon;
-                    let lng2 = req.query.lon;
+                        lng1 = lng1 * Math.PI / 180;
+                        lng2 = lng2 * Math.PI / 180;
 
-                    lng1 = lng1 * Math.PI / 180;
-                    lng2 = lng2 * Math.PI / 180;
+                        lat1 = lat1 * Math.PI / 180;
+                        lat2 = lat2 * Math.PI / 180;
 
-                    lat1 = lat1 * Math.PI / 180;
-                    lat2 = lat2 * Math.PI / 180;
+                        let dlon = lng2 - lng1;
+                        let dlat = lat2 - lat1;
+                        let a = Math.pow(Math.sin(dlat / 2), 2)
+                            + Math.cos(lat1) * Math.cos(lat2)
+                            * Math.pow(Math.sin(dlon / 2), 2);
 
-                    let dlon = lng2 - lng1;
-                    let dlat = lat2 - lat1;
-                    let a = Math.pow(Math.sin(dlat / 2), 2)
-                        + Math.cos(lat1) * Math.cos(lat2)
-                        * Math.pow(Math.sin(dlon / 2), 2);
+                        let c = 2 * Math.asin(Math.sqrt(a));
 
-                    let c = 2 * Math.asin(Math.sqrt(a));
+                        let radius = 6371;
 
-                    let radius = 6371;
+                        let distance = c * radius;
 
-                    let distance = c * radius;
+                        distances.push(distance);
 
-                    const vehicleOwner = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId)
-                    const user = await DbService.getById(COLLECTIONS.USERS, vehicleOwner.userId);
-                    Object.assign(vehicle, { user: user });
-
-                    distances.push(distance);
-
-                    let shortestDistance = distances[0];
-                    for (let j = 0; j < distances.length; j++) {
-                        if (distances[j] < shortestDistance) {
-                            shortestDistance = distances[j];
-                        }
-                    }
-
-                    Object.assign(vehicle, { distances: distances }, { shortestDistance: shortestDistance });
-
-                    if (shortestDistance < 20) {
-                        for (let j = 0; j < vehiclesForCheck.length; j++) {
-                            if (vehiclesForCheck[j]._id.toString() == vehicle._id.toString()) {
-                                shouldPush = false;
-                                break;
+                        let shortestDistance = distances[0];
+                        for (let j = 0; j < distances.length; j++) {
+                            if (distances[j] < shortestDistance) {
+                                shortestDistance = distances[j];
                             }
                         }
-                        if (shouldPush) vehiclesForCheck.push(vehicle)
 
-                        shouldPush = true;
+                        Object.assign(vehicle, { distances: distances }, { shortestDistance: shortestDistance });
+
+                        if (shortestDistance < 20) {
+                            for (let j = 0; j < vehiclesForCheck.length; j++) {
+                                if (vehiclesForCheck[j]._id.toString() == vehicle._id.toString()) {
+                                    shouldPush = false;
+                                    break;
+                                }
+                            }
+                            if (shouldPush) vehiclesForCheck.push(vehicle)
+
+                            shouldPush = true;
+                        }
                     }
                 }
             }
