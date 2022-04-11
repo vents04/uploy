@@ -196,13 +196,15 @@ const ridePostValidation = (data) => {
     return schema.validate(data);
 }
 
-const rideStatusUpdateValidation = (data) => {
+const rideUpdateValidation = (data) => {
     const schema = Joi.object({
         status: Joi.string().valid(...Object.values(RIDE_STATUSES)).messages({
             "string.base": `Status should have at least 1 characters`,
             "string.empty": `Status should not be empty`,
             "any.required": `Status is a required field`
-        })
+        }).optional(),
+        actualPickupDt: Joi.date().optional(),
+        actualReturnDt: Joi.date().optional(),
     })
     return schema.validate(data);
 }
@@ -405,7 +407,7 @@ module.exports = {
     userUpdateValidation,
     ridePostValidation,
     lenderUpdateValidation,
-    rideStatusUpdateValidation,
+    rideUpdateValidation,
     vehiclePostValidation,
     vehicleUpdateValidation,
     reviewPostValidation,

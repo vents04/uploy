@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { DATABASE_MODELS, COLLECTIONS, RIDE_STATUSES, CURRENCY_TYPES, UNLOCK_TYPES } = require('../../global');
+const { DATABASE_MODELS, RIDE_STATUSES, CURRENCY_TYPES, UNLOCK_TYPES } = require('../../global');
 
 const rideSchema = mongoose.Schema({
     vehicleId: {

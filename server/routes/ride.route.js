@@ -137,7 +137,7 @@ router.get('/:id/payment-intent', authenticate, async (req, res, next) => {
     try {
         const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
         if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
-        if (ride.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot get the payment intent for this ride", HTTP_STATUS_CODES.FORBIDDEN));
+        if (!req.isAdmin && ride.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot get the payment intent for this ride", HTTP_STATUS_CODES.FORBIDDEN));
         if (ride.status != RIDE_STATUSES.AWAITING_PAYMENT) return next(new ResponseError("Cannot get the payment intent for rides in statuses different than awaiting payment", HTTP_STATUS_CODES.CONFLICT));
 
         const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(req.params.id) });
@@ -166,14 +166,17 @@ router.get('/:id', authenticate, async (req, res, next) => {
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
-        if (lender && ride.userId.toString() != req.user._id.toString()) {
-            if (vehicle.lenderId.toString() != lender._id.toString()) {
-                return next(new ResponseError("You are not allowed to get this ride", HTTP_STATUS_CODES.FORBIDDEN));
+        if (!req.isAdmin) {
+            const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+            if (lender && ride.userId.toString() != req.user._id.toString()) {
+                if (vehicle.lenderId.toString() != lender._id.toString()) {
+                    return next(new ResponseError("You are not allowed to get this ride", HTTP_STATUS_CODES.FORBIDDEN));
+                }
             }
         }
+
         ride.vehicle = vehicle;
-        ride.isLender = ride.userId.toString() != req.user._id.toString();
+        ride.isLender = !req.isAdmin ? ride.userId.toString() != req.user._id.toString() : false;
 
         return res.status(HTTP_STATUS_CODES.OK).send({
             ride
@@ -185,21 +188,27 @@ router.get('/:id', authenticate, async (req, res, next) => {
 
 router.get('/', authenticate, async (req, res, next) => {
     try {
-        const rides = await DbService.getMany(COLLECTIONS.RIDES, { userId: mongoose.Types.ObjectId(req.user._id) });
+        let rides = [];
+        (!req.isAdmin)
+            ? rides = await DbService.getMany(COLLECTIONS.RIDES, { userId: mongoose.Types.ObjectId(req.user._id) })
+            : rides = await DbService.getMany(COLLECTIONS.RIDES, {});
+
         for (let ride of rides) {
             const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
             ride.vehicle = vehicle;
         }
 
-        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
-        if (lender) {
-            const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, { lenderId: mongoose.Types.ObjectId(lender._id) });
-            for (let vehicle of vehicles) {
-                const vehicleRides = await DbService.getMany(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id) });
-                for (let vehicleRide of vehicleRides) {
-                    vehicleRide.vehicle = vehicle;
+        if (!req.isAdmin) {
+            const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+            if (lender) {
+                const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, { lenderId: mongoose.Types.ObjectId(lender._id) });
+                for (let vehicle of vehicles) {
+                    const vehicleRides = await DbService.getMany(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id) });
+                    for (let vehicleRide of vehicleRides) {
+                        vehicleRide.vehicle = vehicle;
+                    }
+                    rides.push(...vehicleRides);
                 }
-                rides.push(...vehicleRides);
             }
         }
 
@@ -211,63 +220,69 @@ router.get('/', authenticate, async (req, res, next) => {
     }
 });
 
-router.put('/:id/status', authenticate, async (req, res, next) => {
+router.put('/:id', authenticate, async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid ride id", HTTP_STATUS_CODES.BAD_REQUEST));
 
-    const { error } = rideStatusUpdateValidation(req.body);
+    const { error } = rideUpdateValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
-
     try {
+        if (!req.isAdmin && (Object.keys(req.body).length > 1 || !Object.keys().includes("status")))
+            return next(new ResponseError("Only ride status may be changed", HTTP_STATUS_CODES.BAD_REQUEST));
+
         const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
         if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-        if (req.user._id.toString() != ride.userId.toString()) {
-            const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
-            if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
+        if (!req.admin) {
+            if (req.user._id.toString() != ride.userId.toString()) {
+                const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
+                if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-            const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
-            if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
+                const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
+                if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-            if (req.user._id.toString() != lender.userId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
+                if (req.user._id.toString() != lender.userId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
 
-            if (!(req.body.status == RIDE_STATUSES.FINISHED && ride.status == RIDE_STATUSES.ONGOING)
-                && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL))
+                if (!(req.body.status == RIDE_STATUSES.FINISHED && ride.status == RIDE_STATUSES.ONGOING)
+                    && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL))
+                    return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
+
+                await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
+                    status: req.body.status,
+                });
+
+                if (req.body.status == RIDE_STATUSES.FINISHED) {
+                    await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
+                        actualReturnDt: new Date().getTime()
+                    });
+                } else if (req.body.status == RIDE_STATUSES.CANCELLED) {
+                    await RideService.refundPayment(ride._id);
+                }
+
+                return res.sendStatus(HTTP_STATUS_CODES.OK);
+            }
+
+            if (!(req.body.status == RIDE_STATUSES.ONGOING && ride.status == RIDE_STATUSES.AWAITING)
+                && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
+                && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING_PAYMENT))
                 return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
 
             await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
                 status: req.body.status,
             });
 
-            if (req.body.status == RIDE_STATUSES.FINISHED) {
+            if (req.body.status == RIDE_STATUSES.ONGOING && ride.status == RIDE_STATUSES.AWAITING) {
                 await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
-                    acReturnDt: new Date().getTime()
+                    actualPickupDt: new Date().getTime()
                 });
-            } else if (req.body.status == RIDE_STATUSES.CANCELLED) {
+            } else if (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL) {
                 await RideService.refundPayment(ride._id);
             }
 
             return res.sendStatus(HTTP_STATUS_CODES.OK);
         }
 
-        if (!(req.body.status == RIDE_STATUSES.ONGOING && ride.status == RIDE_STATUSES.AWAITING)
-            && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
-            && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING_PAYMENT))
-            return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
 
-        await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
-            status: req.body.status,
-        });
-
-        if (req.body.status == RIDE_STATUSES.ONGOING && ride.status == RIDE_STATUSES.AWAITING) {
-            await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
-                acPickupDt: new Date().getTime()
-            });
-        } else if (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL) {
-            await RideService.refundPayment(ride._id);
-        }
-
-        return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (e) {
         return next(new ResponseError(e.message || DEFAULT_ERROR_MESSAGE, e.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }
