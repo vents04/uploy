@@ -8,10 +8,8 @@ const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, DRIVER_LICENSE_ST
 const DbService = require('../services/db.service');
 const DriverLicense = require('../db/models/driverLicense.model');
 const ResponseError = require('../errors/responseError');
-const DriverLicenseService = require('../services/driverLicense.service');
 
 router.post("/", authenticate, async (req, res, next) => {
-    console.log(req.isAdmin);
     const { error } = driverLicensePostValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 

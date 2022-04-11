@@ -16,7 +16,7 @@ router.get('/:id/auth-redirect', authenticate, async (req, res, next) => {
   try {
     const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
-    if (key.status != KEY_STATUSES.PENDING_AUTH_FLOW) return next(new ResponseError("Cannot generate auth redirect for keys that are not in pending auth flow", HTTP_STATUS_CODES.CONFLICT));
+    if (!req.isAdmin && key.status != KEY_STATUSES.PENDING_AUTH_FLOW) return next(new ResponseError("Cannot generate auth redirect for keys that are not in pending auth flow", HTTP_STATUS_CODES.CONFLICT));
 
     const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
     if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
@@ -24,7 +24,7 @@ router.get('/:id/auth-redirect', authenticate, async (req, res, next) => {
     const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-    if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot add key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
+    if (!req.isAdmin && lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot add key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
     const authRedirectUrl = SmartcarService.generateSmartcarConnectAuthRedirect(req.params.id);
     return res.status(HTTP_STATUS_CODES.OK).send({
@@ -95,7 +95,7 @@ router.get('/:id/access', authenticate, async (req, res, next) => {
     const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-    if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot add key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
+    if (!req.isAdmin && lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot add key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
     const access = await SmartcarService.generateAccessTokenByRefreshToken(key.smartcarAccessResponse.refreshToken);
     await DbService.update(COLLECTIONS.KEYS, { _id: mongoose.Types.ObjectId(req.params.id) }, { smartcarAccessResponse: access });
@@ -114,7 +114,7 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
   try {
     const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
-    if (key.status != KEY_STATUSES.ACTIVE) return next(new ResponseError("Digital vehicle key is not active", HTTP_STATUS_CODES.CONFLICT));
+    if (!req.isAdmin && key.status != KEY_STATUSES.ACTIVE) return next(new ResponseError("Digital vehicle key is not active", HTTP_STATUS_CODES.CONFLICT));
 
     const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
     if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
@@ -122,7 +122,7 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
     const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-    if (lender.userId.toString() == req.user._id.toString()) {
+    if (!req.isAdmin && lender.userId.toString() == req.user._id.toString()) {
       const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
       if (ride.unlockType == UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Performing actions on vehicle is prohibited during ongoing rides", HTTP_STATUS_CODES.CONFLICT));
 
@@ -132,20 +132,22 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
       return res.sendStatus(HTTP_STATUS_CODES.OK);
     }
 
-    let canUnlock = false;
-    const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
-    if (ride.userId.toString() == req.user._id.toString()) {
-      if (ride.unlockType != UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Unlocking vehicle with digital key for this ride is not allowed", HTTP_STATUS_CODES.CONFLICT));
-      canUnlock = true;
+    if (!req.isAdmin) {
+      let canUnlock = false;
+      const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
+      if (ride.userId.toString() == req.user._id.toString()) {
+        if (ride.unlockType != UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Unlocking vehicle with digital key for this ride is not allowed", HTTP_STATUS_CODES.CONFLICT));
+        canUnlock = true;
+      }
+
+      const driverLicense = await DbService.getOne(COLLECTIONS.DRIVER_LICENSES, { userId: mongoose.Types.ObjectId(req.user._id) });
+      if (!driverLicense) return next(new ResponseError("Driver license not found. Cannot perform actions on this vehicle", HTTP_STATUS_CODES.CONFLICT));
+      if (driverLicense.status == DRIVER_LICENSE_STATUSES.EXPIRED
+        || new Date(driverLicense.expiryDt).getTime() < new Date().getTime())
+        return next(new ResponseError("Cannot perform actions on this vehicle because your driver license has expired", HTTP_STATUS_CODES.CONFLICT));
+
+      if (!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
     }
-
-    const driverLicense = await DbService.getOne(COLLECTIONS.DRIVER_LICENSES, { userId: mongoose.Types.ObjectId(req.user._id) });
-    if (!driverLicense) return next(new ResponseError("Driver license not found. Cannot perform actions on this vehicle", HTTP_STATUS_CODES.CONFLICT));
-    if (driverLicense.status == DRIVER_LICENSE_STATUSES.EXPIRED
-      || new Date(driverLicense.expiryDt).getTime() < new Date().getTime())
-      return next(new ResponseError("Cannot perform actions on this vehicle because your driver license has expired", HTTP_STATUS_CODES.CONFLICT));
-
-    if (!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
     const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.id);
     await KeyService.performActionOnVehicle(key.smartcarVehicleId.toString(), access.accessToken, req.params.action);
@@ -169,7 +171,7 @@ router.delete('/:id', authenticate, async (req, res, next) => {
     const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-    if (lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot delete key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN))
+    if (!req.isAdmin && lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("Cannot delete key for this vehicle", HTTP_STATUS_CODES.FORBIDDEN))
 
     const rides = await DbService.getMany(COLLECTIONS.RIDES, {
       vehicleId: mongoose.Types.ObjectId(vehicle._id),
