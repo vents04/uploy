@@ -1,6 +1,7 @@
 const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
+const vindec = require('vindec');
 const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES } = require('../global');
 
 const signupValidation = (data) => {
@@ -275,7 +276,11 @@ const vehiclePostValidation = (data) => {
         photos: Joi.array().items(Joi.object({
             photo: Joi.string().required(),
         })).min(1).required(),
-        vin: Joi.string().length(17).required()
+        vin: Joi.string().length(17).required().custom((value, helper) => {
+            if (vindec.validate(value))
+                return helper.message("Your VIN number appears to be invalid");
+            return true;
+        })
     })
     return schema.validate(data);
 }

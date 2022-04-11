@@ -48,3 +48,9 @@ httpServer.listen(PORT, function () {
         throw new Error(err);
     }
 })();
+
+const vindec = require('vindec');
+const isVinValid = vindec.validate('1HGCM66577A012787');
+let decodedVin = null;
+if (isVinValid) decodedVin = vindec.decode('1HGCM66577A012787');
+console.log(isVinValid, decodedVin);

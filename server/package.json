@@ -22,6 +22,7 @@
     "smartcar": "^9.1.1",
     "socket.io": "^4.4.1",
     "stripe": "^8.215.0",
+    "vindec": "^2.7.2",
     "winston": "^3.6.0"
   }
 }
