@@ -10,6 +10,7 @@ const errorHandler = require('./errors/errorHandler');
 const { PORT } = require('./global');
 const KeyService = require('./services/key.service');
 const RideService = require('./services/ride.service');
+const DriverLicenseService = require('./services/driverLicense.service');
 
 app
     .use(cors())
@@ -44,6 +45,7 @@ httpServer.listen(PORT, function () {
         await KeyService.runCronTaskForRefreshingAccess();
         await RideService.setupCancellationForPendingApprovalRides();
         await RideService.setupCancellationForAwaitingPaymentRides();
+        await DriverLicenseService.setupDriverLicensesExpirationTimeouts();
     } catch (err) {
         throw new Error(err);
     }

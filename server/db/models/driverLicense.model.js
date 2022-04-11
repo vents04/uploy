@@ -30,10 +30,14 @@ const driverLicenseSchema = mongoose.Schema({
         enum: Object.values(DRIVER_LICENSE_STATUSES),
         default: DRIVER_LICENSE_STATUSES.PENDING_APPROVAL
     },
+    expiryDt: {
+        type: Number,
+        default: null
+    },
     createdDt: {
         type: Number,
         default: Date.now
-    }
+    },
 });
 
 function photosSizeLimit(value) {

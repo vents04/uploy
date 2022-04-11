@@ -4,10 +4,11 @@ const mongoose = require('mongoose');
 
 const { authenticate } = require('../middlewares/authenticate');
 const { driverLicensePostValidation } = require('../validation/hapi');
-const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, DRIVER_LICENSE_STATUSES } = require('../global');
+const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, DRIVER_LICENSE_STATUSES, TEN_MINUTES_IN_MILLISECONDS } = require('../global');
 const DbService = require('../services/db.service');
 const DriverLicense = require('../db/models/driverLicense.model');
 const ResponseError = require('../errors/responseError');
+const DriverLicenseService = require('../services/driverLicense.service');
 
 router.post("/", authenticate, async (req, res, next) => {
     const { error } = driverLicensePostValidation(req.body);

@@ -3,10 +3,16 @@ const { RIDE_STATUSES, COLLECTIONS, TEN_MINUTES_IN_MILLISECONDS } = require("../
 const DbService = require("./db.service");
 const StripeService = require("./stripe.service");
 
-const pendingApprovalRidesTimeouts = [];
-const awaitingPaymentRidesTimeouts = [];
+let pendingApprovalRidesTimeouts = [];
+let awaitingPaymentRidesTimeouts = [];
 
 const RideService = {
+
+    cancelRide: async (rideId) => {
+        await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(rideId) }, { status: RIDE_STATUSES.CANCELLED_BY_SYSTEM });
+        return true;
+    },
+
     setupCancellationForPendingApprovalRides: async () => {
         const rides = await DbService.getMany(COLLECTIONS.RIDES, { status: RIDE_STATUSES.PENDING_APPROVAL });
         for (let ride of rides) {
@@ -16,10 +22,6 @@ const RideService = {
             }
             RideService.addRideToPendingApprovalTimeouts(ride._id, ride.plannedPickupDt, ride.createdDt);
         }
-    },
-
-    cancelRide: async (rideId) => {
-        await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(rideId) }, { status: RIDE_STATUSES.CANCELLED_BY_SYSTEM });
         return true;
     },
 
