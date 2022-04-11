@@ -32,7 +32,7 @@ router.post("/", authenticate, async (req, res, next) => {
         driverLicense.userId = req.user._id;
         await DbService.create(COLLECTIONS.DRIVER_LICENSES, driverLicense);
 
-        return res.sendStatus(HTTP_STATUS_CODES.OK);
+        return res.sendStatus(HTTP_STATUS_CODES.CREATED);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
     }

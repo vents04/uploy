@@ -1,5 +1,6 @@
 const { default: mongoose } = require("mongoose");
-const { COLLECTIONS, DRIVER_LICENSE_STATUSES } = require("../global");
+const ResponseError = require("../errors/responseError");
+const { COLLECTIONS, DRIVER_LICENSE_STATUSES, HTTP_STATUS_CODES, VEHICLE_TYPES_WITHOUT_DRIVER_LICENSE } = require("../global");
 const DbService = require("./db.service");
 
 let driverLicensesExpirationTimeouts = []
@@ -31,6 +32,15 @@ const DriverLicenseService = {
         await DbService.update(COLLECTIONS.DRIVER_LICENSES, { _id: mongoose.Types.ObjectId(driverLicenseId) }, { status: DRIVER_LICENSE_STATUSES.EXPIRED });
         return true;
     },
+
+    canDriveVehicleType: async (vehicleType, userId) => {
+        if (VEHICLE_TYPES_WITHOUT_DRIVER_LICENSE.includes(vehicleType)) return true;
+
+        const driverLicense = await DbService.getOne(COLLECTIONS.DRIVER_LICENSES, { userId: mongoose.Types.ObjectId(userId) });
+        if (!driverLicense) throw new ResponseError("Driver license not found", HTTP_STATUS_CODES.NOT_FOUND);
+
+        return Object.values(driverLicense.vehicleTypes).includes(vehicleType);
+    }
 }
 
 module.exports = DriverLicenseService;

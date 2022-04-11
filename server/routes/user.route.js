@@ -35,7 +35,7 @@ router.post("/signup", async (req, res, next) => {
 
         setTimeout(() => {
             const token = AuthenticationService.generateToken({ _id: mongoose.Types.ObjectId(user._id) });
-            return res.status(HTTP_STATUS_CODES.OK).send({
+            return res.status(HTTP_STATUS_CODES.CREATED).send({
                 token,
             });
         }, 1000);

@@ -6,7 +6,7 @@ const DbService = require('../services/db.service');
 const SmartcarService = require('../services/smartcar.service');
 const { authenticate } = require('../middlewares/authenticate');
 
-const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES, KEY_ACTIONS, UNLOCK_TYPES } = require('../global');
+const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES, KEY_ACTIONS, UNLOCK_TYPES, DRIVER_LICENSE_STATUSES } = require('../global');
 const ResponseError = require('../errors/responseError');
 const KeyService = require('../services/key.service');
 
@@ -138,6 +138,12 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
       if (ride.unlockType != UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Unlocking vehicle with digital key for this ride is not allowed", HTTP_STATUS_CODES.CONFLICT));
       canUnlock = true;
     }
+
+    const driverLicense = await DbService.getOne(COLLECTIONS.DRIVER_LICENSES, { userId: mongoose.Types.ObjectId(req.user._id) });
+    if (!driverLicense) return next(new ResponseError("Driver license not found. Cannot perform actions on this vehicle", HTTP_STATUS_CODES.CONFLICT));
+    if (driverLicense.status == DRIVER_LICENSE_STATUSES.EXPIRED
+      || new Date(driverLicense.expiryDt).getTime() < new Date().getTime())
+      return next(new ResponseError("Cannot perform actions on this vehicle because your driver license has expired", HTTP_STATUS_CODES.CONFLICT));
 
     if (!canUnlock) return next(new ResponseError("Cannot unlock this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 

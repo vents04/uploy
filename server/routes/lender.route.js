@@ -30,7 +30,7 @@ router.post("/", authenticate, async (req, res, next) => {
         });
         await DbService.create(COLLECTIONS.STRIPE_ACCOUNTS, stripeAccount);
 
-        return res.sendStatus(HTTP_STATUS_CODES.OK);
+        return res.sendStatus(HTTP_STATUS_CODES.CREATED);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }

@@ -120,10 +120,9 @@ const userUpdateValidation = data => {
             }
             return true;
         }),
-        profilePicture: Joi.string().optional().allow(null),
-        customerId: Joi.string().optional().messages({
-            "string.base": `Customer id should have at least 1 character`,
-            "string.empty": `Customer id should not be empty`,
+        profilePicture: Joi.string().optional().allow(null).messages({
+            "string.base": `Profile picture should have at least 1 character`,
+            "string.empty": `Profile picture should not be empty`,
         })
 
     })

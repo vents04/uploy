@@ -6,12 +6,13 @@ const Ride = require("../db/models/ride.model");
 const ResponseError = require("../errors/responseError");
 const DbService = require("../services/db.service");
 
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_WEBHOOK_SIGNING_SECRET } = require("../global");
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_WEBHOOK_SIGNING_SECRET, USER_STATUSES } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
 const { ridePostValidation, rideStatusUpdateValidation } = require("../validation/hapi");
 const RideService = require("../services/ride.service");
 const StripeService = require("../services/stripe.service");
 const StripePaymentIntent = require("../db/models/stripePaymentIntent.model");
+const DriverLicenseService = require("../services/driverLicense.service");
 
 router.post('/', authenticate, async (req, res, next) => {
     const { error } = ridePostValidation(req.body);
@@ -20,6 +21,8 @@ router.post('/', authenticate, async (req, res, next) => {
     let rideInstance = null;
 
     try {
+        if (req.user.status == USER_STATUSES.BLOCKED) return next(new ResponseError("Cannot ride vehicles because your account is blocked", HTTP_STATUS_CODES.CONFLICT));
+
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.body.vehicleId);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
         if (vehicle.status != VEHICLE_STATUSES.ACTIVE) return next(new ResponseError("Vehicle is not reservable", HTTP_STATUS_CODES.FORBIDDEN));
@@ -45,7 +48,8 @@ router.post('/', authenticate, async (req, res, next) => {
         }
         if (!returnLocationMatch) return next(new ResponseError("Return location does not exist", HTTP_STATUS_CODES.BAD_REQUEST));
 
-
+        const canDriveVehicleType = await DriverLicenseService.canDriveVehicleType(vehicle.type, req.user._id);
+        if (!canDriveVehicleType) return next(new ResponseError("You do not have an approved driver license document or it does not allow you to drive this vehicle", HTTP_STATUS_CODES.CONFLICT))
 
         const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
         if (lender.userId.toString() == req.user._id.toString()) {
@@ -118,7 +122,7 @@ router.post('/', authenticate, async (req, res, next) => {
         });
         await DbService.create(COLLECTIONS.STRIPE_PAYMENT_INTENTS, stripePaymentIntent);
 
-        return res.status(HTTP_STATUS_CODES.OK).send({
+        return res.status(HTTP_STATUS_CODES.CREATED).send({
             paymentIntentClientSecret: paymentIntent.client_secret
         });
     } catch (e) {
