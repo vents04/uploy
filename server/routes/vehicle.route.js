@@ -6,7 +6,7 @@ const Vehicle = require('../db/models/vehicle.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { vehiclePostValidation, vehicleUpdateValidation } = require('../validation/hapi');
 const KeyService = require('../services/key.service');
@@ -16,9 +16,7 @@ router.post("/", authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
-    if (!lender) {
-        return next(new ResponseError("You are not a lender", HTTP_STATUS_CODES.FORBIDDEN));
-    }
+    if (!lender) return next(new ResponseError("You are not a lender", HTTP_STATUS_CODES.FORBIDDEN));
 
     try {
         const vehicle = new Vehicle(req.body);
@@ -43,13 +41,11 @@ router.put("/:id", authenticate, async (req, res, next) => {
 
     try {
         const vehicle = DbService.getById(COLLECTIONS.VEHICLES, req.params.id);
-        if (!vehicle) {
-            return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
-        }
+        if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+        const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
         if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
-        if (lender._id.toString() != vehicle.lenderId.toString()) return next(new ResponseError("You are not the owner of this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
+        if (!req.isAdmin && lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("You are not the owner of this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
         await DbService.update(COLLECTIONS.VEHICLES, { _id: mongoose.Types.ObjectId(req.params.id) }, req.body);
         if (req.body.unlockTypes
@@ -69,9 +65,7 @@ router.get("/:id", async (req, res, next) => {
 
     try {
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.params.id);
-        if (!vehicle) {
-            return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
-        }
+        if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
 
         return res.status(HTTP_STATUS_CODES.OK).send({
             vehicle
@@ -83,10 +77,16 @@ router.get("/:id", async (req, res, next) => {
 
 router.get("/", authenticate, async (req, res, next) => {
     try {
-        const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
-        if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
+        let vehicles = [];
 
-        const vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, { lenderId: mongoose.Types.ObjectId(lender._id) });
+        if (!req.isAdmin) {
+            const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+            if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+            vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, { lenderId: mongoose.Types.ObjectId(lender._id) });
+        }
+
+        vehicles = await DbService.getMany(COLLECTIONS.VEHICLES, {});
 
         return res.status(HTTP_STATUS_CODES.OK).send({
             vehicles

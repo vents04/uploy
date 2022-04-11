@@ -11,6 +11,7 @@ const ResponseError = require('../errors/responseError');
 const DriverLicenseService = require('../services/driverLicense.service');
 
 router.post("/", authenticate, async (req, res, next) => {
+    console.log(req.isAdmin);
     const { error } = driverLicensePostValidation(req.body);
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 

@@ -5,6 +5,7 @@ const ResponseError = require('../errors/responseError');
 
 const errorHandler = require('../errors/errorHandler');
 const AuthenticationService = require('../services/authentication.service');
+const AdminService = require('../services/admin.service');
 
 let authenticate = async (req, res, next) => {
     const token = req.header("x-auth-token");
@@ -28,8 +29,16 @@ let authenticate = async (req, res, next) => {
             errorHandler(new ResponseError("Token has expired", HTTP_STATUS_CODES.UNAUTHORIZED), req, res, next);
             return;
         }
+
+        let isAdminAuthenticated = false;
+        if (req.header("x-admin-secret")) {
+            isAdminAuthenticated = await AdminService.isAdminAuthenticated(user._id, req.header("x-admin-secret"));
+        }
+
         req.user = user;
         req.token = token;
+        req.isAdmin = isAdminAuthenticated;
+
         next();
     }
     catch (error) {
