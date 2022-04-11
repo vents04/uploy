@@ -6,7 +6,7 @@ const Vehicle = require('../db/models/vehicle.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES, VEHICLE_STATUSES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { vehiclePostValidation, vehicleUpdateValidation } = require('../validation/hapi');
 const KeyService = require('../services/key.service');
@@ -40,6 +40,9 @@ router.put("/:id", authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
+        if (!req.admin && req.body.status && req.body.status != VEHICLE_STATUSES.ACTIVE && req.body.status != VEHICLE_STATUSES.INACTIVE)
+            return next(new ResponseError("Cannot update vehicle status to different values than active and inactive", HTTP_STATUS_CODES.CONFLICT));
+
         const vehicle = DbService.getById(COLLECTIONS.VEHICLES, req.params.id);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
 

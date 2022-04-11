@@ -349,7 +349,8 @@ const vehicleUpdateValidation = (data) => {
         }).required(),
         photos: Joi.array().items(Joi.object({
             photo: Joi.string().required(),
-        })).min(1).required()
+        })).min(1).required(),
+        status: Joi.string().valid(...Object.values(VEHICLE_STATUSES)).optional()
     })
     return schema.validate(data);
 }
