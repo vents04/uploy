@@ -392,6 +392,15 @@ const reviewPostValidation = (data) => {
     return schema.validate(data);
 }
 
+const driverLicensePostValidation = (data) => {
+    const schema = Joi.object({
+        photos: Joi.array().items(Joi.object({
+            photo: Joi.string().required(),
+        })).length(2).required()
+    })
+    return schema.validate(data);
+}
+
 module.exports = {
     signupValidation,
     loginValidation,
@@ -401,5 +410,6 @@ module.exports = {
     rideStatusUpdateValidation,
     vehiclePostValidation,
     vehicleUpdateValidation,
-    reviewPostValidation
+    reviewPostValidation,
+    driverLicensePostValidation
 }
