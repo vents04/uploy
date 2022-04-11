@@ -300,8 +300,6 @@ const vehicleUpdateValidation = (data) => {
             "string.max": `Description should have at most 500 characters`,
             "any.required": `Description is a required field`
         }),
-        type: Joi.string().valid(...Object.values(VEHICLE_TYPES)).required(),
-        seats: Joi.alternatives().conditional('type', { is: "CAR", then: Joi.number().required().min(1).max(8) }),
         pickupLocations: Joi.array().items({
             address: Joi.string().max(1000).messages({
                 "string.base": `Address should have at least 1 character`,

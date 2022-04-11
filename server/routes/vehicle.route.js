@@ -6,7 +6,7 @@ const Vehicle = require('../db/models/vehicle.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, LENDER_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, RIDE_STATUSES, UNLOCK_TYPES, VEHICLE_TYPES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { vehiclePostValidation, vehicleUpdateValidation } = require('../validation/hapi');
 const KeyService = require('../services/key.service');
@@ -24,7 +24,8 @@ router.post("/", authenticate, async (req, res, next) => {
         const vehicle = new Vehicle(req.body);
         vehicle.lenderId = lender._id.toString();
         await DbService.create(COLLECTIONS.VEHICLES, vehicle);
-        if (Object.values(vehicle.unlockTypes).includes(UNLOCK_TYPES.AUTOMATIC)
+        if (vehicle.type == VEHICLE_TYPES.CAR
+            && Object.values(vehicle.unlockTypes).includes(UNLOCK_TYPES.AUTOMATIC)
             && !await KeyService.checkForExistingKey(vehicle._id))
             await KeyService.generateDefaultKey(vehicle._id);
 
@@ -52,6 +53,7 @@ router.put("/:id", authenticate, async (req, res, next) => {
 
         await DbService.update(COLLECTIONS.VEHICLES, { _id: mongoose.Types.ObjectId(req.params.id) }, req.body);
         if (req.body.unlockTypes
+            && vehicle.type == VEHICLE_TYPES.CAR
             && Object.values(req.body.unlockTypes).includes(UNLOCK_TYPES.AUTOMATIC)
             && !await KeyService.checkForExistingKey(vehicle._id))
             await KeyService.generateDefaultKey(vehicle._id);
