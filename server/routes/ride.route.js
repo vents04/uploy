@@ -6,9 +6,9 @@ const Ride = require("../db/models/ride.model");
 const ResponseError = require("../errors/responseError");
 const DbService = require("../services/db.service");
 
-const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_WEBHOOK_SIGNING_SECRET, USER_STATUSES } = require("../global");
+const { COLLECTIONS, HTTP_STATUS_CODES, RIDE_STATUSES, THIRTY_MINUTES_IN_MILLISECONDS, VEHICLE_STATUSES, STRIPE_ACCOUNT_STATUSES, STRIPE_WEBHOOK_SIGNING_SECRET, USER_STATUSES, STRIPE_CUSTOMER_STATUSES } = require("../global");
 const { authenticate } = require("../middlewares/authenticate");
-const { ridePostValidation, rideStatusUpdateValidation, rideRefundPostValidation } = require("../validation/hapi");
+const { ridePostValidation, rideRefundPostValidation, rideUpdateValidation } = require("../validation/hapi");
 const RideService = require("../services/ride.service");
 const StripeService = require("../services/stripe.service");
 const StripePaymentIntent = require("../db/models/stripePaymentIntent.model");
@@ -100,20 +100,18 @@ router.post('/', authenticate, async (req, res, next) => {
             currency: vehicle.price.currency
         }
 
+        const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
+        const stripeCustomer = await DbService.getOne(COLLECTIONS.STRIPE_CUSTOMERS, { userId: mongoose.Types.ObjectId(req.user._id) });
+        if (!stripeAccount || stripeAccount.status != STRIPE_ACCOUNT_STATUSES.ACTIVE) {
+            return next(new ResponseError("Ride not saved. Cannot create checkout for this ride because we could not find the lender's Stripe account or it is blocked", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+        }
+        if (!stripeCustomer || stripCustomer.status != STRIPE_CUSTOMER_STATUSES.ACTIVE) {
+            return next(new ResponseError("Ride not saved. Cannot create checkout for this ride because we could not find your Stripe customer instance or it is blocked", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
+        }
+
         await DbService.create(COLLECTIONS.RIDES, ride);
         rideInstance = ride;
         RideService.addRideToAwaitingPaymentTimeouts(ride._id, ride.createdDt);
-
-        const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
-        const stripeCustomer = await DbService.getOne(COLLECTIONS.STRIPE_CUSTOMERS, { userId: mongoose.Types.ObjectId(req.user._id) });
-        if (!stripeAccount) {
-            await RideService.cancelRide(ride._id);
-            return next(new ResponseError("Cannot create checkout for this ride because we could not find the lender's Stripe account or his stripe account is blocked", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
-        }
-        if (!stripeCustomer) {
-            await RideService.cancelRide(ride._id);
-            return next(new ResponseError("Cannot create checkout for this ride because we could not find your Stripe customer instance", HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR))
-        }
 
         const paymentIntent = await StripeService.createPaymentIntent(ride.price.amount * 100, ride.price.currency, stripeAccount.stripeAccountId, stripeCustomer.stripeCustomerId)
         const stripePaymentIntent = new StripePaymentIntent({
@@ -142,7 +140,7 @@ router.get('/:id/payment-intent', authenticate, async (req, res, next) => {
 
         const stripePaymentIntent = await DbService.getOne(COLLECTIONS.STRIPE_PAYMENT_INTENTS, { rideId: mongoose.Types.ObjectId(req.params.id) });
         if (!stripePaymentIntent) return next(new ResponseError("Payment intent not found", HTTP_STATUS_CODES.NOT_FOUND));
-        if (new Date(stripePaymentIntent.createdDt).getTime() + TEN_MINUTES_IN_MILLISECONDS < new Date().getTime()) return next(new ResponseError("Cannot get the payment intent after payment window of 10 minutes", HTTP_STATUS_CODES.CONFLICT));
+        if (!req.isAdmin && new Date(stripePaymentIntent.createdDt).getTime() + TEN_MINUTES_IN_MILLISECONDS < new Date().getTime()) return next(new ResponseError("Cannot get the payment intent after payment window of 10 minutes", HTTP_STATUS_CODES.CONFLICT));
 
         // check the status to determine whether it has been paid
         const stripePaymentIntentInstance = await StripeService.retrievePaymentIntent(stripePaymentIntent.stripePaymentIntentId);
@@ -343,6 +341,23 @@ router.post('/:id/stripe/refund', authenticate, async (req, res, next) => {
         await RideService.refundPayment(ride._id, ride.price.amount, req.body.percentageOfRefund ? req.body.percentageOfRefund : 100);
 
         return res.sendStatus(HTTP_STATUS_CODES.OK)
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
+router.delete("/:id", authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may delete rides", HTTP_STATUS_CODES.FORBIDDEN));
+
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid ride id", HTTP_STATUS_CODES.BAD_REQUEST));
+
+    try {
+        const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
+        if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+
+        await DbService.delete(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) });
+
+        return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {
         return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
     }

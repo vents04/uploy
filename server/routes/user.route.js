@@ -19,8 +19,12 @@ router.post("/signup", async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-        const existingUser = await DbService.getOne(COLLECTIONS.USERS, { email: req.body.email });
-        if (existingUser) return next(new ResponseError("User with this email already exists", HTTP_STATUS_CODES.BAD_REQUEST));
+        const existingUser = await DbService.getOne(COLLECTIONS.USERS, {
+            "$or": [
+                { email: req.body.email },
+                { phone: req.body.phone }]
+        });
+        if (existingUser) return next(new ResponseError("User with this email and/or phone number already exists", HTTP_STATUS_CODES.BAD_REQUEST));
 
         const user = new User(req.body);
         user.password = AuthenticationService.hashPassword(req.body.password);
