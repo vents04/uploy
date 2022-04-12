@@ -7,7 +7,7 @@ const rideSchema = mongoose.Schema({
         ref: DATABASE_MODELS.RIDE,
         required: true
     },
-    currentVehicleInstance: {
+    vehicleInstance: {
         type: Object,
         required: true
     },

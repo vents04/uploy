@@ -99,10 +99,10 @@ router.post('/', authenticate, async (req, res, next) => {
             amount: calculatedPrice,
             currency: vehicle.price.currency
         }
-        ride.currentVehicleInstance = vehicle;
+        ride.vehicleInstance = vehicle;
         const lenderUserInstance = await DbService.getById(COLLECTIONS.USERS, lender.userId);
-        ride.currentLenderUserInstance = lenderUserInstance;
-        ride.currentRiderUserInstance = req.user;
+        ride.lenderUserInstance = lenderUserInstance;
+        ride.riderUserInstance = req.user;
 
         const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
         const stripeCustomer = await DbService.getOne(COLLECTIONS.STRIPE_CUSTOMERS, { userId: mongoose.Types.ObjectId(req.user._id) });
@@ -162,23 +162,42 @@ router.get('/:id', authenticate, async (req, res, next) => {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid ride id", HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
+
         const ride = await DbService.getById(COLLECTIONS.RIDES, req.params.id);
         if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.NOT_FOUND));
+        Object.assign(ride, { currentVehicleInstance: null, currentLenderUserInstance: null, currentRiderUserInstance: null });
 
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
-        if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
+        if (vehicle) ride.currentVehicleInstance = vehicle;
+
+        let isLender = false;
+        const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.vehicleInstance?.lenderId);
+        if (lender) {
+            if (lender.userId.toString() == req.user._id.toString()) {
+                ride.currentLenderUserInstance = req.user;
+                isLender = true;
+            } else {
+                const lenderUserInstance = await DbService.getById(COLLECTIONS.USERS, lender.userId);
+                if (lenderUserInstance) ride.currentLenderUserInstance = lenderUserInstance;
+            }
+        }
 
         if (!req.isAdmin) {
-            const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
             if (lender && ride.userId.toString() != req.user._id.toString()) {
-                if (vehicle.lenderId.toString() != lender._id.toString()) {
+                if (lender.userId.toString() != req.user._id.toString()) {
                     return next(new ResponseError("You are not allowed to get this ride", HTTP_STATUS_CODES.FORBIDDEN));
                 }
             }
         }
 
-        ride.vehicle = vehicle;
-        ride.isLender = !req.isAdmin ? ride.userId.toString() != req.user._id.toString() : false;
+        const rider = await DbService.getById(COLLECTIONS.USERS, ride.userId);
+        if (rider) {
+            if (rider.userId.toString() == req.user._id.toString())
+                rider.currentRiderUserInstance = rider;
+        }
+
+        ride.isLender = isLender;
+        ride.hasAdminRequestedResource = req.isAdmin;
 
         return res.status(HTTP_STATUS_CODES.OK).send({
             ride
