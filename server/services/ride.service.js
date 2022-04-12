@@ -1,15 +1,21 @@
 const mongoose = require("mongoose");
-const { RIDE_STATUSES, COLLECTIONS, TEN_MINUTES_IN_MILLISECONDS } = require("../global");
+const { RIDE_STATUSES, COLLECTIONS, TEN_MINUTES_IN_MILLISECONDS, TWENTY_MINUTES_IN_MILLISECONDS } = require("../global");
 const DbService = require("./db.service");
 const StripeService = require("./stripe.service");
 
 let pendingApprovalRidesTimeouts = [];
+let ongoingRidesTimeouts = [];
 let awaitingPaymentRidesTimeouts = [];
 
 const RideService = {
 
     cancelRide: async (rideId) => {
         await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(rideId) }, { status: RIDE_STATUSES.CANCELLED_BY_SYSTEM });
+        return true;
+    },
+
+    finishRide: async (rideId) => {
+        await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(rideId) }, { status: RIDE_STATUSES.FINISHED, actualReturnDt: new Date().getTime() });
         return true;
     },
 
@@ -35,6 +41,31 @@ const RideService = {
             pendingApprovalRidesTimeouts.splice(pendingApprovalRidesTimeouts.length - 1, 1);
         }, ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime()) / 2) - new Date().getTime()));
         pendingApprovalRidesTimeouts.push(rideTimeout);
+        return true;
+    },
+
+    setupCancellationForOngoingRides: async () => {
+        const rides = await DbService.getMany(COLLECTIONS.RIDES, { status: RIDE_STATUSES.ONGOING });
+        for (let ride of rides) {
+            if (new Date(ride.plannedReturnDt).getTime() + TWENTY_MINUTES_IN_MILLISECONDS < new Date().getTime()) {
+                await RideService.finishRide(ride._id);
+                continue;
+            }
+            RideService.addRideToOngoingTimeouts(ride._id, ride.plannedReturnDt);
+        }
+        return true;
+    },
+
+    addRideToOngoingTimeouts: async (rideId, plannedReturnDt) => {
+        const rideTimeout = setTimeout(async function () {
+            const ride = await DbService.getById(COLLECTIONS.RIDES, rideId);
+            if (ride && ride.status == RIDE_STATUSES.ONGOING) {
+                await RideService.finishRide(rideId);
+            }
+            clearTimeout(ongoingRidesTimeouts[ongoingRidesTimeouts.length - 1])
+            ongoingRidesTimeouts.splice(ongoingRidesTimeouts.length - 1, 1);
+        }, ((new Date(plannedReturnDt).getTime() + TWENTY_MINUTES_IN_MILLISECONDS) - new Date().getTime()));
+        ongoingRidesTimeouts.push(rideTimeout);
         return true;
     },
 

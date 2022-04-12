@@ -299,6 +299,7 @@ router.put('/:id', authenticate, async (req, res, next) => {
                 await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
                     actualPickupDt: new Date().getTime()
                 });
+                await RideService.addRideToOngoingTimeouts(ride._id, ride.plannedReturnDt);
             } else if ((req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
                 || (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING_PAYMENT)) {
                 await RideService.refundPayment(ride._id, ride.price.amount, 100);

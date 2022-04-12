@@ -124,7 +124,7 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
     if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
     if (!req.isAdmin && lender.userId.toString() == req.user._id.toString()) {
-      const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
+      const ride = await DbService.getMany(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
       if (ride.unlockType == UNLOCK_TYPES.AUTOMATIC) return next(new ResponseError("Performing actions on vehicle is prohibited during ongoing rides", HTTP_STATUS_CODES.CONFLICT));
 
       const access = await KeyService.generateAccess(key.smartcarAccessResponse.refreshToken, req.params.id);
