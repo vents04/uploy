@@ -265,7 +265,9 @@ router.put('/:id', authenticate, async (req, res, next) => {
                 if (req.user._id.toString() != lender.userId.toString()) return next(new ResponseError("You do not have permission to change the ride status", HTTP_STATUS_CODES.FORBIDDEN));
 
                 if (!(req.body.status == RIDE_STATUSES.FINISHED && ride.status == RIDE_STATUSES.ONGOING)
-                    && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL))
+                    && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
+                    && !(req.body.status == RIDE_STATUSES.AWAITING && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
+                    && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING))
                     return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
 
                 await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
@@ -285,7 +287,8 @@ router.put('/:id', authenticate, async (req, res, next) => {
 
             if (!(req.body.status == RIDE_STATUSES.ONGOING && ride.status == RIDE_STATUSES.AWAITING)
                 && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
-                && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING_PAYMENT))
+                && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING_PAYMENT)
+                && !(req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING))
                 return next(new ResponseError("Ride status cannot be changed", HTTP_STATUS_CODES.CONFLICT));
 
             await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
@@ -296,8 +299,11 @@ router.put('/:id', authenticate, async (req, res, next) => {
                 await DbService.update(COLLECTIONS.RIDES, { _id: mongoose.Types.ObjectId(req.params.id) }, {
                     actualPickupDt: new Date().getTime()
                 });
-            } else if (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL) {
+            } else if ((req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.PENDING_APPROVAL)
+                || (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING_PAYMENT)) {
                 await RideService.refundPayment(ride._id, ride.price.amount, 100);
+            } else if (req.body.status == RIDE_STATUSES.CANCELLED && ride.status == RIDE_STATUSES.AWAITING) {
+                await RideService.refundPayment(ride._id, ride.price.amount, 80);
             }
 
             return res.sendStatus(HTTP_STATUS_CODES.OK);
