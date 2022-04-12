@@ -6,6 +6,7 @@ import { Link } from "react-router-dom";
 import ApiRequests from '../../classes/ApiRequests';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import cta from '../../../assets/img/cta.jpg';
+import BottomNavigation from '../../components/BottomNavigation/BottomNavigation';
 
 export default class Home extends Component {
 
@@ -42,7 +43,7 @@ export default class Home extends Component {
 
   checkAuthentication = () => {
     ApiRequests.post("user/validate-token", {}, {}, true).then((response) => {
-      this.setState({isAuthenticated: response.data.valid});
+      this.setState({ isAuthenticated: response.data.valid });
     }).catch((error) => {
       if (error.response) {
         alert(error.response.data.error);
@@ -60,46 +61,46 @@ export default class Home extends Component {
         <Navbar />
         <div className="background-image-container">
           <div className="background-image" style={{
-            backgroundImage: `url(${logo})` 
-          }}/>
+            backgroundImage: `url(${logo})`
+          }} />
           <div className="search-bar-container">
-            <p className="search-bar-text">Search for <br/> your next rental</p>
+            <p className="search-bar-text">Search for <br /> your next rental</p>
             <div className="search-input-container">
               <p className="search-bar-hint" style={{
                 marginBottom: "8px"
               }}>Where at?</p>
               <GooglePlacesAutocomplete
                 className="search-bar"
-                  apiKey='AIzaSyAYQnnCgQuzHGk6WMcbhtOPJHROn5vycE4'
-                  selectProps={{
-                    onChange: (value) => {
-                      this.setState({placeId: value.value.place_id});
-                    },
-                  }}/>
+                apiKey='AIzaSyAYQnnCgQuzHGk6WMcbhtOPJHROn5vycE4'
+                selectProps={{
+                  onChange: (value) => {
+                    this.setState({ placeId: value.value.place_id });
+                  },
+                }} />
               <p className="search-bar-hint" style={{
                 marginTop: "8px"
               }}>From</p>
               <div className="inline">
                 <input type="date" className="search-bar" value={this.state.pickupDate} onChange={(evt) => {
-                  this.setState({pickupDate: evt.target.value})
-                }}/>
+                  this.setState({ pickupDate: evt.target.value })
+                }} />
                 <input type="time" className="search-bar" value={this.state.pickupTime} onChange={(evt) => {
-                  this.setState({pickupTime: evt.target.value})
-                }}/>
+                  this.setState({ pickupTime: evt.target.value })
+                }} />
               </div>
               <p className="search-bar-hint">To</p>
               <div className="inline">
                 <input type="date" className="search-bar" value={this.state.returnDate} onChange={(evt) => {
-                  this.setState({returnDate: evt.target.value})
-                }}/>
+                  this.setState({ returnDate: evt.target.value })
+                }} />
                 <input type="time" className="search-bar" value={this.state.returnTime} onChange={(evt) => {
-                  this.setState({returnTime: evt.target.value})
-                }}/>
+                  this.setState({ returnTime: evt.target.value })
+                }} />
               </div>
             </div>
             <Link
-             style={{width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center'}}
-             to={"/search?pD=" + this.state.pickupDate + "&pT=" + this.state.pickupTime + "&rD=" + this.state.returnDate + "&rT=" + this.state.returnTime + "&placeId=" + this.state.placeId}>
+              style={{ width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'center' }}
+              to={"/search?pD=" + this.state.pickupDate + "&pT=" + this.state.pickupTime + "&rD=" + this.state.returnDate + "&rT=" + this.state.returnTime + "&placeId=" + this.state.placeId}>
               <button className="action-button" style={{
                 width: "90%",
                 marginTop: "16px",
@@ -119,6 +120,7 @@ export default class Home extends Component {
             </Link>
           </div>
         }
+        <BottomNavigation />
       </>
     )
   }

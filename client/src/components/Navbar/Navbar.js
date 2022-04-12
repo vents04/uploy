@@ -21,22 +21,22 @@ export default class Navbar extends Component {
   }
 
   closeAllModals = () => {
-    this.setState({showLogin: false, showSignup: false});
+    this.setState({ showLogin: false, showSignup: false });
   }
 
   toggleShowLogin = (state) => {
-    this.setState({showLogin: state});
+    this.setState({ showLogin: state });
   }
 
   toggleShowSignup = (state) => {
-    this.setState({showSignup: state});
+    this.setState({ showSignup: state });
   }
 
   checkAuthentication = () => {
     const token = Auth.getToken();
-    if(!token) return;
+    if (!token) return;
     ApiRequests.post("user/validate-token", {}, {}, true).then((response) => {
-      this.setState({isAuthenticated: response.data.valid, user: response.data.user});
+      this.setState({ isAuthenticated: response.data.valid, user: response.data.user });
     }).catch((error) => {
       if (error.response) {
         alert(error.response.data.error);
@@ -53,34 +53,34 @@ export default class Navbar extends Component {
       <div className="navbar-container">
         {
           this.state.showLogin
-          && <Login showLogin={this.toggleShowLogin} showSignup={this.toggleShowSignup} checkAuthentication={this.checkAuthentication}/>
+          && <Login showLogin={this.toggleShowLogin} showSignup={this.toggleShowSignup} checkAuthentication={this.checkAuthentication} />
         }
         {
           this.state.showSignup
-          && <Signup showSignup={this.toggleShowSignup} showLogin={this.toggleShowLogin} checkAuthentication={this.checkAuthentication}/>
+          && <Signup showSignup={this.toggleShowSignup} showLogin={this.toggleShowLogin} checkAuthentication={this.checkAuthentication} />
         }
         <div className="navbar-logo-container">
-            <div className="navbar-logo" />
-            <p className="navbar-logo-text">Rent 'n go</p>
+          <div className="navbar-logo" />
+          <p className="navbar-logo-text">Rent 'n go</p>
         </div>
         <div className="navbar-menu">
           {
             this.state.isAuthenticated
-            ? <Link to="/profile">
+              ? <Link to="/profile">
                 {
                   this.state.user.profilePicture
-                  ? <div className="profile-picture-container" style={{
-                    backgroundImage: `url(${this.state.user.profilePicture})`,
-                    boxShadow: "3px 3px 3px #e7e7e7",
-                    border: "1px solid #e7e7e7",
-                  }} />
-                  : <div className="profile-picture-container">
-                    <p className="profile-picture-initials">{this.state.user.firstName.charAt(0)}{this.state.user.lastName.charAt(0)}</p>
-                  </div>
+                    ? <div className="profile-picture-container" style={{
+                      backgroundImage: `url(${this.state.user.profilePicture})`,
+                      boxShadow: "3px 3px 3px #e7e7e7",
+                      border: "1px solid #e7e7e7",
+                    }} />
+                    : <div className="profile-picture-container">
+                      <p className="profile-picture-initials">{this.state.user.firstName.charAt(0)}{this.state.user.lastName.charAt(0)}</p>
+                    </div>
                 }
-            </Link>
-            : <button className="action-button" onClick={() => {
-                this.setState({showLogin: true})
+              </Link>
+              : <button className="action-button" onClick={() => {
+                this.setState({ showLogin: true })
               }}>Account</button>
           }
         </div>
