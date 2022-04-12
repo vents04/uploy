@@ -121,13 +121,13 @@ router.get("/search", async (req, res, next) => {
         }
 
         for (let vehicle of vehicles) {
+            if (vehicle.status != VEHICLE_STATUSES.ACTIVE) continue;
+
             let distances = [];
             let canBeGot = true;
 
             const vehicleOwner = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
             if (!vehicleOwner || vehicleOwner.status != LENDER_STATUSES.ACTIVE) continue;
-            const user = await DbService.getById(COLLECTIONS.USERS, vehicleOwner.userId);
-            if (!user || user.status != USERS_STATUSES.ACTIVE) continue;
             Object.assign(vehicle, { user: user });
 
             const rides = await DbService.getMany(COLLECTIONS.RIDES, {
