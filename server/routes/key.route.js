@@ -6,7 +6,7 @@ const DbService = require('../services/db.service');
 const SmartcarService = require('../services/smartcar.service');
 const { authenticate } = require('../middlewares/authenticate');
 
-const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES, KEY_ACTIONS, UNLOCK_TYPES, DRIVER_LICENSE_STATUSES } = require('../global');
+const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, KEY_STATUSES, RIDE_STATUSES, KEY_ACTIONS, UNLOCK_TYPES, DRIVER_LICENSE_STATUSES, USER_STATUSES } = require('../global');
 const ResponseError = require('../errors/responseError');
 const KeyService = require('../services/key.service');
 
@@ -88,6 +88,7 @@ router.get('/:id/access', authenticate, async (req, res, next) => {
   try {
     const key = await DbService.getById(COLLECTIONS.KEYS, req.params.id);
     if (!key) return next(new ResponseError("Key not found", HTTP_STATUS_CODES.NOT_FOUND));
+    if (key.status != KEY_STATUSES.ACTIVE) return next(new ResponseError("Cannot generate key access for keys that are not active", HTTP_STATUS_CODES.CONFLICT));
 
     const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, key.vehicleId);
     if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
@@ -133,6 +134,8 @@ router.post('/:id/:action', authenticate, async (req, res, next) => {
     }
 
     if (!req.isAdmin) {
+      if (req.user.status != USER_STATUSES.ACTIVE) return next(new ResponseError("Your user status must be active to perform actions on vehicles", HTTP_STATUS_CODES.FORBIDDEN));
+
       let canUnlock = false;
       const ride = await DbService.getOne(COLLECTIONS.RIDES, { vehicleId: mongoose.Types.ObjectId(vehicle._id), status: RIDE_STATUSES.ONGOING });
       if (ride.userId.toString() == req.user._id.toString()) {

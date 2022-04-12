@@ -41,7 +41,6 @@ router.put("/", authenticate, async (req, res, next) => {
     if (error) return next(new ResponseError(error.details[0].message, HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
-
         const lender = await DbService.getOne(COLLECTIONS.LENDERS, { userId: mongoose.Types.ObjectId(req.user._id) });
         if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
 
@@ -87,7 +86,7 @@ router.post("/stripe/account-link/:accountLinkType", authenticate, async (req, r
 
         const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
         if (!stripeAccount) return next(new ResponseError("Stripe account not found", HTTP_STATUS_CODES.NOT_FOUND));
-        if (stripeAccount.status == STRIPE_ACCOUNT_STATUSES.BLOCKED) return next(new ResponseError("You cannot create a stripe account onboarding link because we have blocked your stirpe account", HTTP_STATUS_CODES.CONFLICT));
+        if (stripeAccount.status != STRIPE_ACCOUNT_STATUSES.ACTIVE) return next(new ResponseError("You cannot create a stripe account onboarding link because we have blocked your stirpe account", HTTP_STATUS_CODES.CONFLICT));
 
         const accountLink = await StripeService.createAccountLink(stripeAccount.stripeAccountId, STRIPE_ACCOUNT_LINK_TYPES.ONBOARDING);
         const stripeAccountLink = new StripeAccountLink({

@@ -53,8 +53,6 @@ router.put("/:id", authenticate, async (req, res, next) => {
         if (req.body.status) {
             if (req.body.status == DRIVER_LICENSE_STATUSES.APPROVED) {
                 await DriverLicenseService.addToDriverLicensesExpirationTimeouts(driverLicense._id, (req.body.expiryDt) ? req.body.expiryDt : driverLicense.expiryDt ? driverLicense.expiryDt : new Date().getTime())
-            } else {
-
             }
         }
 

@@ -101,15 +101,13 @@ router.get("/", authenticate, async (req, res, next) => {
 });
 
 router.delete("/:id", authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may delete vehicles", HTTP_STATUS_CODES.FORBIDDEN));
+
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) return next(new ResponseError("Invalid vehicle id", HTTP_STATUS_CODES.BAD_REQUEST));
 
     try {
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, req.params.id);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
-
-        const lender = await DbService.getById(COLLECTIONS.LENDERS, vehicle.lenderId);
-        if (!lender) return next(new ResponseError("Lender not found", HTTP_STATUS_CODES.NOT_FOUND));
-        if (!req.isAdmin && lender.userId.toString() != req.user._id.toString()) return next(new ResponseError("You are not the owner of this vehicle", HTTP_STATUS_CODES.FORBIDDEN));
 
         await DbService.delete(COLLECTIONS.VEHICLES, { _id: mongoose.Types.ObjectId(req.params.id) });
         await DbService.delete(COLLECTIONS.KEYS, { vehicleId: mongoose.Types.ObjectId(req.params.id) });

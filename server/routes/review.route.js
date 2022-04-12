@@ -6,7 +6,7 @@ const Review = require('../db/models/review.model');
 const ResponseError = require('../errors/responseError');
 const DbService = require('../services/db.service');
 
-const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, DATABASE_MODELS } = require('../global');
+const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, DATABASE_MODELS, RIDE_STATUSES } = require('../global');
 const { authenticate } = require('../middlewares/authenticate');
 const { reviewPostValidation } = require('../validation/hapi');
 
@@ -17,6 +17,7 @@ router.post("/", authenticate, async (req, res, next) => {
     try {
         const ride = await DbService.getById(COLLECTIONS.RIDES, req.body.rideId);
         if (!ride) return next(new ResponseError("Ride not found", HTTP_STATUS_CODES.BAD_REQUEST));
+        if (ride.status != RIDE_STATUSES.FINISHED) return next(new ResponseError("Cannot leave review for an unfinished ride", HTTP_STATUS_CODES.CONFLICT));
 
         const vehicle = await DbService.getById(COLLECTIONS.VEHICLES, ride.vehicleId);
         if (!vehicle) return next(new ResponseError("Vehicle not found", HTTP_STATUS_CODES.NOT_FOUND));
