@@ -116,7 +116,7 @@ router.delete('/:id', authenticate, async (req, res, next) => {
         const user = await DbService.getById(COLLECTIONS.USERS, req.params.id);
         if (!user) return next(new ResponseError("User not found", HTTP_STATUS_CODES.NOT_FOUND));
 
-        await DbService.delte(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.params.id) });
+        await DbService.delete(COLLECTIONS.USERS, { _id: mongoose.Types.ObjectId(req.params.id) });
 
         return res.sendStatus(HTTP_STATUS_CODES.OK);
     } catch (err) {

@@ -64,4 +64,23 @@ router.put("/:id", authenticate, async (req, res, next) => {
     }
 });
 
+router.get("/", authenticate, async (req, res, next) => {
+    if (!req.isAdmin) return next(new ResponseError("Only admins may get driver licenses", HTTP_STATUS_CODES.FORBIDDEN));
+
+    try {
+        if (req.query.status) {
+            if (!Object.values(DRIVER_LICENSE_STATUSES).includes(req.query.status))
+                return next(new ResponseError("Invalid driver license status", HTTP_STATUS_CODES.BAD_REQUEST));
+        }
+
+        const driverLicenses = await DbService.getMany(COLLECTIONS.DRIVER_LICENSES, (req.query.status) ? { status: req.query.status } : {});
+
+        return res.status(HTTP_STATUS_CODES.OK).send({
+            driverLicenses
+        })
+    } catch (err) {
+        return next(new ResponseError(err.message || DEFAULT_ERROR_MESSAGE, err.status || HTTP_STATUS_CODES.INTERNAL_SERVER_ERROR));
+    }
+});
+
 module.exports = router;
