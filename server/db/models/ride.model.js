@@ -7,6 +7,18 @@ const rideSchema = mongoose.Schema({
         ref: DATABASE_MODELS.RIDE,
         required: true
     },
+    currentVehicleInstance: {
+        type: Object,
+        required: true
+    },
+    lenderUserInstance: {
+        type: Object,
+        required: true
+    },
+    riderUserInstance: {
+        type: Object,
+        required: true
+    },
     price: {
         currency: {
             type: String,

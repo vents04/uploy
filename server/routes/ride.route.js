@@ -99,6 +99,10 @@ router.post('/', authenticate, async (req, res, next) => {
             amount: calculatedPrice,
             currency: vehicle.price.currency
         }
+        ride.currentVehicleInstance = vehicle;
+        const lenderUserInstance = await DbService.getById(COLLECTIONS.USERS, lender.userId);
+        ride.currentLenderUserInstance = lenderUserInstance;
+        ride.currentRiderUserInstance = req.user;
 
         const stripeAccount = await DbService.getOne(COLLECTIONS.STRIPE_ACCOUNTS, { lenderId: mongoose.Types.ObjectId(lender._id) });
         const stripeCustomer = await DbService.getOne(COLLECTIONS.STRIPE_CUSTOMERS, { userId: mongoose.Types.ObjectId(req.user._id) });
