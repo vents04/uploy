@@ -9,6 +9,7 @@ import Rides from './screens/Rides/Rides';
 import Vehicles from './screens/Vehicles/Vehicles';
 import Profile from './screens/Profile/Profile';
 import DateRangePicker from './screens/DateRangePicker/DateRangePicker';
+import TimePicker from './screens/TimePicker/TimePicker';
 
 class App extends React.Component {
     render() {
@@ -18,6 +19,7 @@ class App extends React.Component {
                     <Route path="/" element={<Home />} />
                     <Route path="/add-vehicle" element={<PostVehicle />} />
                     <Route path="/date-range-picker" element={<DateRangePicker />} />
+                    <Route path="/time-picker" element={<TimePicker />} />
                     <Route path="/book" element={<Book />} />
                     <Route path="/ride" element={<Ride />} />
                     <Route path="/rides" element={<Rides />} />

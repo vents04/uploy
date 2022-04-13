@@ -40,55 +40,21 @@
     padding: 0.75rem;
 }
 
-// Override date picker css classes
-
-.rdrDateDisplayWrapper {
-    background-color: transparent;
+.time-input-section {
+    margin: 1.75rem;
 }
 
-.rdrDateDisplayItem  {
-    padding: 0.5rem 0rem;
-
-    input {
-        font-family: "Main Bold", sans-serif;
-        color: #262626;
-        font-size: 0.9rem;
-    }
-}
-
-.rdrDateDisplayItemActive {
-    border-color: transparent;
-}
-
-.rdrWeekDays, .rdrMonthAndYearWrapper {
-    display: none;
-}
-
-.rdrMonth {
-    width: auto !important;
-    height: auto !important;
-    padding: 0.5rem 1rem;
-}
-
-.rdrMonthName {
+.time-input-section-title {
+    font-family: "Main Bold", sans-serif;
     font-size: 1rem;
-    color: black;
 }
 
-.rdrStartEdge {
-    border-top-left-radius: 4px;
-    border-bottom-left-radius: 4px;
-}
-
-.rdrEndEdge {
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
-}
-
-.rdrInRange {
-    border-radius: 0px !important;
-}
-
-.rdrDay  {
-    height: 50px;
+.time-dropdown {
+    width: 50%;
+    margin-top: 8px;
+    font-family: "Main Regular", sans-serif;
+    font-size: 0.9rem;
+    border: 1px solid #e7e7e7;
+    border-radius: 4px;
+    padding: 0.75rem;
 }

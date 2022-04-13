@@ -8,8 +8,6 @@ import * as rdrLocales from 'react-date-range/dist/locale';
 
 import './DateRangePicker.scss';
 import { BiArrowBack } from 'react-icons/bi';
-import SearchBottomBar from '../../components/SearchBottomBar/SearchBottomBar';
-import { ROOT_URLS } from '../../global';
 import { Link } from 'react-router-dom';
 
 export default class DateRangePicker extends Component {
@@ -17,13 +15,13 @@ export default class DateRangePicker extends Component {
     state = {
         ranges: [
             {
-                startDate: new Date(),
-                endDate: new Date(new Date().setDate(new Date().getDate() + 7)),
+                startDate: new Date(new Date().setDate(new Date().getDate() + 1)),
+                endDate: new Date(new Date().setDate(new Date().getDate() + 8)),
                 key: 'selection'
             }
         ],
         queryParams: {
-            previousPage: "/rides",
+            previousPage: "/",
             locationQuery: ""
         }
     }
@@ -40,6 +38,16 @@ export default class DateRangePicker extends Component {
         const queryParams = this.state.queryParams;
         if (params.get("previousPage")) queryParams.previousPage = params.get("previousPage");
         if (params.get("locationQuery")) queryParams.locationQuery = params.get("locationQuery");
+        if (params.get("pickupDate") && params.get("returnDate")) {
+            const ranges = [
+                {
+                    startDate: new Date(params.get("pickupDate")),
+                    endDate: new Date(params.get("returnDate")),
+                    key: 'selection'
+                }
+            ]
+            this.setState({ ranges })
+        }
         this.setState({ queryParams });
     }
 
@@ -63,13 +71,19 @@ export default class DateRangePicker extends Component {
                         scroll={{ enabled: true }}
                         minDate={new Date()}
                         maxDate={new Date(new Date().setMonth(new Date().getMonth() + 8))}
-                        onChange={item => this.setState({ ranges: [item.selection] })}
+                        onChange={item => {
+                            this.setState({ ranges: [item.selection] })
+                        }}
                         moveRangeOnFirstSelection={false}
                         ranges={this.state.ranges}
                         rangeColors={["#2666CF"]}
                     />
                 </div>
-                <SearchBottomBar />
+                <div className="search-bottom-bar-container">
+                    <Link style={{ width: '100%' }} to={`/time-picker?previousPage=/date-range-picker&locationQuery=${this.state.queryParams.locationQuery}&pickupDate=${this.state.ranges[0].startDate}&returnDate=${this.state.ranges[0].endDate}`}>
+                        <button className="search-bottom-bar-button">Next</button>
+                    </Link>
+                </div>
             </div>
         )
     }

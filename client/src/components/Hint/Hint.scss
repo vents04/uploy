@@ -1,0 +1,14 @@
+@import '../../../assets/styles/global.styles.css';
+
+.hint-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border: 1px solid #e7e7e7;
+    border-radius: 4px;
+    padding: 0.75rem;
+}
+
+.hint-icon {
+    color: #aaa;
+}

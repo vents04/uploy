@@ -13,7 +13,6 @@ export default class SearchBar extends Component {
     }
 
     componentDidMount() {
-        console.log("tuka", this.props.locationQuery.length)
         if (this.props.locationQuery?.length > 0) this.setState({ query: this.props.locationQuery });
     }
 

@@ -21,7 +21,6 @@ export default class SearchTopBar extends Component {
     }
 
     componentDidMount() {
-        console.log(this.props)
         if (this.props.locationQuery?.length > 0) {
             this.toggleContainerHeight("100%");
             this.searchPlacesAutocomplete(this.props.locationQuery);
