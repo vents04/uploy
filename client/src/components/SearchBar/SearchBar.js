@@ -12,6 +12,11 @@ export default class SearchBar extends Component {
         query: ""
     }
 
+    componentDidMount() {
+        console.log("tuka", this.props.locationQuery.length)
+        if (this.props.locationQuery?.length > 0) this.setState({ query: this.props.locationQuery });
+    }
+
     render() {
         return (
             <div className="search-bar">
@@ -38,7 +43,8 @@ export default class SearchBar extends Component {
                         this.setState({ query: evt.target.value }, () => {
                             if (this.state.query.length > 0) this.props.searchPlacesAutocomplete(this.state.query);
                         });
-                    }} />
+                    }}
+                    value={this.state.query} />
             </div>
         )
     }

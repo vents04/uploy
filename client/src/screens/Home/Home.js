@@ -22,26 +22,17 @@ export default class Home extends Component {
     lon: 23.0947,
     placeId: null,
     isAuthenticated: false,
+    locationQuery: "",
+    paramsWereSet: false
   }
 
   componentDidMount() {
-    this.checkAuthentication();
-
-    const pickupDt = new Date();
-    const returnDt = new Date(new Date().setDate(pickupDt.getDate() + 5));
-
-    const pickupDate = pickupDt.toISOString().split('T')[0];
-    const pickupTime = pickupDt.toTimeString().split(' ')[0];
-    const returnDate = returnDt.toISOString().split('T')[0];
-    const returnTime = returnDt.toTimeString().split(' ')[0];
-
-    this.setState({
-      pickupDate: pickupDate,
-      pickupTime: pickupTime,
-      returnDate: returnDate,
-      returnTime: returnTime
-    })
+    const params = new URLSearchParams(window.location.search)
+    const locationQuery = params.get("locationQuery");
+    if (locationQuery && locationQuery.length > 0) this.setState({ locationQuery });
+    this.setState({ paramsWereSet: true });
   }
+
 
   checkAuthentication = () => {
     ApiRequests.post("user/validate-token", {}, {}, true).then((response) => {
@@ -60,7 +51,11 @@ export default class Home extends Component {
   render() {
     return (
       <>
-        <SearchTopBar showBackArrow={false} />
+        {
+          this.state.paramsWereSet
+          && <SearchTopBar showBackArrow={false} locationQuery={this.state.locationQuery} />
+
+        }
         {
           this.state.isAuthenticated
           && <div className="become-lender-container" style={{

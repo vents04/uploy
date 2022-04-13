@@ -1,5 +1,4 @@
 import React, { Component } from 'react'
-import { GOOGLE_API_KEY } from '../../global';
 
 import './Prediction.scss';
 

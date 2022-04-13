@@ -30,7 +30,7 @@ const MENUS = {
     PROFILE: "PROFILE",
 }
 
-const GOOGLE_API_KEY = "AIzaSyAYQnnCgQuzHGk6WMcbhtOPJHROn5vycE4"
+const GOOGLE_API_KEY = "AIzaSyAYQnnCgQuzHGk6WMcbhtOPJHROn5vycE4";
 
 module.exports = {
     AUTHENTICATION_TOKEN_KEY: "x-auth-token",

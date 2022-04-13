@@ -3,11 +3,12 @@ import { Route, Routes, BrowserRouter } from 'react-router-dom';
 import Book from './screens/Book/Book';
 import Home from './screens/Home/Home';
 import PostVehicle from './screens/PostVehicle/PostVehicle';
-import Search from './screens/Search/Search';
+import Search from './screens/DateRangePicker/DateRangePicker';
 import Ride from './screens/Ride/Ride';
 import Rides from './screens/Rides/Rides';
 import Vehicles from './screens/Vehicles/Vehicles';
 import Profile from './screens/Profile/Profile';
+import DateRangePicker from './screens/DateRangePicker/DateRangePicker';
 
 class App extends React.Component {
     render() {
@@ -16,7 +17,7 @@ class App extends React.Component {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/add-vehicle" element={<PostVehicle />} />
-                    <Route path="/search" element={<Search />} />
+                    <Route path="/date-range-picker" element={<DateRangePicker />} />
                     <Route path="/book" element={<Book />} />
                     <Route path="/ride" element={<Ride />} />
                     <Route path="/rides" element={<Rides />} />
