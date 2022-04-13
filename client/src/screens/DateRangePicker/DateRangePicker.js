@@ -54,7 +54,7 @@ export default class DateRangePicker extends Component {
     render() {
         return (
             <div>
-                <Link to={`${this.state.queryParams.previousPage}?locationQuery=${this.state.queryParams.locationQuery}`}>
+                <Link>
                     <BiArrowBack size={32} className="arrow-back" />
                 </Link>
                 <div className="section">
@@ -72,6 +72,10 @@ export default class DateRangePicker extends Component {
                         minDate={new Date()}
                         maxDate={new Date(new Date().setMonth(new Date().getMonth() + 8))}
                         onChange={item => {
+                            if (window.history.pushState) {
+                                var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?pickupDate=' + item.selection.startDate + '&returnDate=' + item.selection.endDate + '&locationQuery=' + this.state.queryParams.locationQuery;
+                                window.history.pushState({ path: newurl }, '', newurl);
+                            }
                             this.setState({ ranges: [item.selection] })
                         }}
                         moveRangeOnFirstSelection={false}

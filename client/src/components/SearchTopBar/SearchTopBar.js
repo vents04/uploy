@@ -21,11 +21,12 @@ export default class SearchTopBar extends Component {
     }
 
     componentDidMount() {
-        if (this.props.locationQuery?.length > 0) {
+        const params = new URLSearchParams(window.location.search)
+        if (params.get("locationQuery")) {
+            this.setState({ query: params.get("locationQuery") });
             this.toggleContainerHeight("100%");
-            this.searchPlacesAutocomplete(this.props.locationQuery);
+            this.searchPlacesAutocomplete(params.get("locationQuery"));
             this.toggleShowBackArrow(true);
-            this.setState({ query: this.props.locationQuery });
             this.setState({ paramsWereSet: true });
             return;
         }
@@ -43,6 +44,10 @@ export default class SearchTopBar extends Component {
 
     searchPlacesAutocomplete = (query) => {
         this.setState({ query });
+        if (window.history.pushState) {
+            var newurl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?locationQuery=' + query;
+            window.history.pushState({ path: newurl }, '', newurl);
+        }
         ApiRequests.get(`maps/places-autocomplete?query=${query}`, {}, false).then((response) => {
             this.setState({ predictions: response.data.predictions, showPredictionsRetrievalError: false });
             if (this.state.containerHeight != "100%") this.toggleContainerHeight("100%");
