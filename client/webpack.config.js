@@ -10,9 +10,6 @@ module.exports = {
         hot: true,
         historyApiFallback: true,
     },
-    externals: {
-        'react': 'React'
-    },
     module: {
         rules: [
             {

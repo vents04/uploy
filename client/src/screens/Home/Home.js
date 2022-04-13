@@ -7,6 +7,7 @@ import ApiRequests from '../../classes/ApiRequests';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import cta from '../../../assets/img/cta.jpg';
 import BottomNavigation from '../../components/BottomNavigation/BottomNavigation';
+import { MENUS } from '../../global';
 
 export default class Home extends Component {
 
@@ -120,7 +121,7 @@ export default class Home extends Component {
             </Link>
           </div>
         }
-        <BottomNavigation />
+        <BottomNavigation activeMenu={MENUS.DISCOVER} />
       </>
     )
   }
