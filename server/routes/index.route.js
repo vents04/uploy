@@ -8,6 +8,7 @@ const vehicleRoute = require('./vehicle.route');
 const keyRoute = require('./key.route');
 const reviewRoute = require('./review.route');
 const driverLicenseRoute = require('./driverLicense.route');
+const mapsRoute = require('./maps.route');
 
 router.use('/user', userRoute);
 router.use('/lender', lenderRoute);
@@ -16,5 +17,6 @@ router.use('/vehicle', vehicleRoute);
 router.use('/key', keyRoute);
 router.use('/review', reviewRoute);
 router.use('/driver-license', driverLicenseRoute);
+router.use('/maps', mapsRoute);
 
 module.exports = router;

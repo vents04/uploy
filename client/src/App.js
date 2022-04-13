@@ -12,7 +12,7 @@ import Profile from './screens/Profile/Profile';
 class App extends React.Component {
     render() {
         return (
-            <BrowserRouter>
+            <BrowserRouter >
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/add-vehicle" element={<PostVehicle />} />
