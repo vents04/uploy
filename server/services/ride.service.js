@@ -39,9 +39,9 @@ const RideService = {
             }
             clearTimeout(pendingApprovalRidesTimeouts[pendingApprovalRidesTimeouts.length - 1])
             pendingApprovalRidesTimeouts.splice(pendingApprovalRidesTimeouts.length - 1, 1);
-        }, ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime()) / 2) - new Date().getTime()) > 6 * ONE_DAY_IN_MILLISECONDS
+        }, ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime())) - new Date().getTime()) > 6 * ONE_DAY_IN_MILLISECONDS
             ? 3 * ONE_DAY_IN_MILLISECONDS
-            : ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime()) / 2) - new Date().getTime()));
+            : ((new Date().getTime(createdDt) + (new Date(plannedPickupDt).getTime() - new Date(createdDt).getTime()) / 3) - new Date().getTime()));
         pendingApprovalRidesTimeouts.push(rideTimeout);
         return true;
     },
