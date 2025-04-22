@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { VEHICLE_STATUSES, CAR_MAKERS, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, SCOOTER_MAKERS, BIKE_MAKERS, COLLECTIONS, DATABASE_MODELS } = require('../../global');
+const { VEHICLE_STATUSES, VEHICLE_TYPES, UNLOCK_TYPES, CURRENCY_TYPES, DATABASE_MODELS } = require('../../global');
 
 const vehicleSchema = mongoose.Schema({
     lenderId: {

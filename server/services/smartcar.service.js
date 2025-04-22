@@ -1,11 +1,10 @@
 const smartcar = require('smartcar');
-const { SMARTCAR_ID, SMARTCAR_SECRET, NODE_ENVIRONMENT, NODE_ENVIRONMENTS } = require('../global');
 
 const client = new smartcar.AuthClient({
-    clientId: SMARTCAR_ID,
-    clientSecret: SMARTCAR_SECRET,
-    redirectUri: 'http://localhost:6140/key/auth-callback',
-    testMode: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT
+    clientId: process.env.SMARTCAR_ID,
+    clientSecret: process.env.SMARTCAR_SECRET,
+    redirectUri: `http://localhost:${process.env.PORT}/key/auth-callback`,
+    testMode: process.env.NODE_ENVIRONMENT == 'development'
 });
 
 const SmartcarService = {

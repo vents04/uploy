@@ -10,7 +10,7 @@ const { HTTP_STATUS_CODES, COLLECTIONS, DEFAULT_ERROR_MESSAGE, THIRTY_MINUTES_IN
 const { authenticate } = require('../middlewares/authenticate');
 const { vehiclePostValidation, vehicleUpdateValidation } = require('../validation/hapi');
 const KeyService = require('../services/key.service');
-const HelperFunctions = require('../helperFunctions/helperFunctions');
+const getDistanceBetweenTwoCoordinates = require('../utils/getDistanceBetweenTwoCoordinates');
 
 router.post("/", authenticate, async (req, res, next) => {
     const { error } = vehiclePostValidation(req.body);
@@ -166,7 +166,7 @@ router.get("/search", async (req, res, next) => {
 
             if (canBeGot) {
                 for (let pickupLocation of vehicle.pickupLocations) {
-                    const distance = HelperFunctions.getDistanceBetweenTwoCoordinates(pickupLocation.lat, pickupLocation.lon, req.query.lat, req.query.lon);
+                    const distance = getDistanceBetweenTwoCoordinates(pickupLocation.lat, pickupLocation.lon, req.query.lat, req.query.lon);
                     distances.push(distance);
                 }
 

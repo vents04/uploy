@@ -1,5 +1,4 @@
-const { STRIPE_SECRET_KEY, NODE_ENVIRONMENTS, NODE_ENVIRONMENT, STRIPE_WEBHOOK_SIGNING_SECRET } = require('../global');
-const stripe = require('stripe')(STRIPE_SECRET_KEY);
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const StripeService = {
     createAccount: async (user) => {
@@ -24,11 +23,11 @@ const StripeService = {
     createAccountLink: async (stripeAccountId, accountLinkType) => {
         const accountLink = await stripe.accountLinks.create({
             account: stripeAccountId,
-            refresh_url: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT
-                ? 'http://localhost:6140/stripe/onboarding/unsuccessful'
+            refresh_url: process.env.NODE_ENVIRONMENT == 'development'
+                ? `http://localhost:${process.env.PORT}/stripe/onboarding/unsuccessful`
                 : 'https://api.rentngo.online/stripe/onboarding/unsuccessful',
-            return_url: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT
-                ? 'http://localhost:6140/stripe/onboarding/successful'
+            return_url: process.env.NODE_ENVIRONMENT == 'development'
+                ? `http://localhost:${process.env.PORT}/stripe/onboarding/successful`
                 : 'https://api.rentngo.online/stripe/onboarding/successful',
             type: accountLinkType,
         });
@@ -82,7 +81,7 @@ const StripeService = {
     },
 
     constructEvent: async (body, signature) => {
-        let event = await stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SIGNING_SECRET);
+        let event = await stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SIGNING_SECRET);
         return event;
     }
 }

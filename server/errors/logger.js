@@ -1,7 +1,5 @@
 const winston = require('winston');
 
-const { NODE_ENVIRONMENT, NODE_ENVIRONMENTS } = require('../global');
-
 const customLevels = {
     levels: {
         trace: 5,
@@ -41,9 +39,9 @@ class Logger {
             format: formatter,
         });
         this.logger = winston.createLogger({
-            level: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT ? 'trace' : 'error',
+            level: process.env.NODE_ENVIRONMENT == 'development' ? 'trace' : 'error',
             levels: customLevels.levels,
-            transports: NODE_ENVIRONMENT == NODE_ENVIRONMENTS.DEVELOPMENT ? [consoleTransport] : [fileTransport],
+            transports: process.env.NODE_ENVIRONMENT == 'development' ? [consoleTransport] : [fileTransport],
         });
         winston.addColors(customLevels.colors);
     }

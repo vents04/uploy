@@ -1,16 +1,14 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
-const { JWT_SECRET } = require('../global');
-
 const AuthenticationService = {
     generateToken: (meta) => {
-        const token = jwt.sign(meta, JWT_SECRET);
+        const token = jwt.sign(meta, process.env.JWT_SECRET);
         return token;
     },
 
     verifyToken: (token) => {
-        const verified = jwt.verify(token, JWT_SECRET);
+        const verified = jwt.verify(token, process.env.JWT_SECRET);
         return verified;
     },
 

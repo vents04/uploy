@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 
 const { authenticate } = require('../middlewares/authenticate');
 const { driverLicensePostValidation, driverLicenseUpdateValidation } = require('../validation/hapi');
-const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, DRIVER_LICENSE_STATUSES, TEN_MINUTES_IN_MILLISECONDS } = require('../global');
+const { HTTP_STATUS_CODES, DEFAULT_ERROR_MESSAGE, COLLECTIONS, DRIVER_LICENSE_STATUSES } = require('../global');
 const DbService = require('../services/db.service');
 const DriverLicense = require('../db/models/driverLicense.model');
 const ResponseError = require('../errors/responseError');

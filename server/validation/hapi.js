@@ -2,7 +2,7 @@ const Joi = require('@hapi/joi');
 const mongoose = require('mongoose');
 const PhoneNumber = require('awesome-phonenumber');
 const vindec = require('vindec');
-const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, CAR_MAKERS, SCOOTER_MAKERS, BIKE_MAKERS, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES, USER_STATUSES, DRIVER_LICENSE_STATUSES } = require('../global');
+const { LENDER_STATUSES, RIDE_STATUSES, VEHICLE_TYPES, VEHICLE_STATUSES, UNLOCK_TYPES, CURRENCY_TYPES, USER_STATUSES, DRIVER_LICENSE_STATUSES } = require('../global');
 
 const signupValidation = (data) => {
     const schema = Joi.object({

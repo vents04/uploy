@@ -1,8 +1,8 @@
 const mongoose = require("mongoose");
-const { DB_URI, HTTP_STATUS_CODES } = require("../global");
+const { HTTP_STATUS_CODES } = require("../global");
 const ResponseError = require('../errors/responseError');
 
-const connect = (dbUri = DB_URI) => {
+const connect = (dbUri = process.env.DB_URI) => {
     return new Promise((resolve, reject) => {
         mongoose.connect(dbUri, {
             useNewUrlParser: true,

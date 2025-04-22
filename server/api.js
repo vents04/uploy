@@ -7,8 +7,7 @@ const mongo = require("./db/mongo");
 const indexRoute = require('./routes/index.route');
 const errorHandler = require('./errors/errorHandler');
 
-const { PORT } = require('./global');
-const KeyService = require('./services/key.service');
+const KeyService = require('./services/key.service  ');
 const RideService = require('./services/ride.service');
 const DriverLicenseService = require('./services/driverLicense.service');
 
@@ -35,8 +34,8 @@ io.on("connection", (socket) => {
     console.log("Socket connection established")
 });
 
-httpServer.listen(PORT, function () {
-    console.log("Server listening on port " + PORT)
+httpServer.listen(process.env.PORT, function () {
+    console.log("Server listening on port " + process.env.PORT)
 });
 
 (async () => {
